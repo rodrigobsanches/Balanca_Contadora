@@ -1,0 +1,49 @@
+# ------------------------------------------------------------
+# Arquivos privados: NUNCA vão para o GitHub
+# ------------------------------------------------------------
+# Guia completo do projeto (tem detalhes do equipamento usado)
+CLAUDE.md
+# Pasta com anotações, documentação e lista de palavras bloqueadas
+privado/
+# Adaptador da balança real (código específico do equipamento)
+app_balanca/balanca_privada/*
+!app_balanca/balanca_privada/__init__.py
+
+# ------------------------------------------------------------
+# Senhas, chaves e credenciais
+# ------------------------------------------------------------
+esp32/config.py
+app_balanca/config.json
+dashboard/.streamlit/secrets.toml
+*credenciais*.json
+*service-account*.json
+*firebase-adminsdk*.json
+.env
+
+# ------------------------------------------------------------
+# Dados locais e gerados
+# ------------------------------------------------------------
+*.db
+*.sqlite
+*.log
+esp32/fila.jsonl
+
+# ------------------------------------------------------------
+# Python e empacotamento
+# ------------------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+build/
+dist/
+*.spec
+.pytest_cache/
+
+# ------------------------------------------------------------
+# Editores e sistema
+# ------------------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

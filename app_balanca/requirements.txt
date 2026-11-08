@@ -1,0 +1,6 @@
+PySide6
+pyserial
+pyttsx3
+pytest
+pyinstaller
+pywin32; sys_platform == "win32"
