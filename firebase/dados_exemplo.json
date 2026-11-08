@@ -1,0 +1,17 @@
+{
+  "produtos": {
+    "P001": { "nome": "Parafuso M6 x 20", "peso_unit_g": 10.4, "estoque_atual": 0, "estoque_minimo": 50 },
+    "P002": { "nome": "Porca M6", "peso_unit_g": 2.6, "estoque_atual": 0, "estoque_minimo": 100 },
+    "P003": { "nome": "Arruela 1/4\"", "peso_unit_g": 1.9, "estoque_atual": 0, "estoque_minimo": 100 }
+  },
+  "operadores": {
+    "UID-DO-CHAVEIRO-1": { "nome": "Rodrigo", "ativo": true }
+  },
+  "pedidos": {
+    "PED001": {
+      "destino": "Correios - SEDEX",
+      "status": "pendente",
+      "itens": { "P001": { "qtd": 10 }, "P002": { "qtd": 10 } }
+    }
+  }
+}

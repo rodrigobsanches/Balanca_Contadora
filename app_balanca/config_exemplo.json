@@ -1,0 +1,11 @@
+{
+  "balanca": "simulada",
+  "divisao_simulada_g": 1,
+  "id_balanca": "BAL-01",
+  "porta_esp32": "auto",
+  "amostra_padrao": 10,
+  "segundos_para_sair": 60,
+  "voz": false,
+  "imprimir_etiqueta": false,
+  "layout_etiqueta": "layouts/etiqueta_conferido.xml"
+}
