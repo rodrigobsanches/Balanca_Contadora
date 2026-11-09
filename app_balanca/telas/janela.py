@@ -16,8 +16,11 @@ from telas.estilo import QSS, formatar_peso
 from telas.tela_amostra import TelaAmostra
 from telas.tela_contagem import TelaContagem
 from telas.tela_descanso import TelaDescanso
+from telas.tela_etiqueta import TelaEtiqueta
 from telas.tela_menu import TelaMenu
 from telas.tela_mensagem import TelaMensagem
+from telas.tela_pedido import TelaPedido
+from telas.tela_pedidos import TelaPedidos
 from telas.tela_produtos import TelaProdutos
 
 LARGURA, ALTURA = 1366, 768
@@ -68,11 +71,12 @@ class BarraStatus(QFrame):
 
 
 class JanelaPrincipal(QWidget):
-    def __init__(self, config, ctrl, balanca):
+    def __init__(self, config, ctrl, balanca, impressora=None):
         super().__init__()
         self.config = config
         self.ctrl = ctrl
         self.balanca = balanca
+        self.impressora = impressora       # None = so previa da etiqueta
         self.setWindowTitle("Balança contadora de peças")
         self.setStyleSheet(QSS)
         self.alguem_perto = False
@@ -103,7 +107,11 @@ class JanelaPrincipal(QWidget):
         self.contagem = TelaContagem(self)
         self.amostra = TelaAmostra(self)
         self.mensagem = TelaMensagem(self)
-        for t in (self.descanso, self.menu, self.produtos, self.contagem, self.amostra, self.mensagem):
+        self.pedidos = TelaPedidos(self)
+        self.pedido = TelaPedido(self)
+        self.etiqueta = TelaEtiqueta(self)
+        for t in (self.descanso, self.menu, self.produtos, self.contagem, self.amostra,
+                  self.mensagem, self.pedidos, self.pedido, self.etiqueta):
             self.pilha.addWidget(t)
         layout.addWidget(self.pilha, 1)
 
@@ -157,9 +165,32 @@ class JanelaPrincipal(QWidget):
     def voltar_contagem(self):
         self.ir(self.contagem)
 
+    def voltar_da_contagem(self):
+        if self.contagem.modo == "conferencia":
+            self.ir(self.pedido)
+        else:
+            self.abrir_inventario()
+
+    # --- conferencia de despacho ---
     def abrir_conferencia(self):
-        self.mostrar_mensagem("Em breve", "A conferência de despacho chega na próxima etapa.",
-                              "info", depois=self.ir_menu)
+        self.pedidos.recarregar()
+        self.ir(self.pedidos)
+
+    def abrir_pedido(self, pedido_id):
+        self.pedido.abrir(pedido_id)
+        self.ir(self.pedido)
+
+    def pesar_item(self, codigo, esperada):
+        self.contagem.abrir(codigo, "conferencia", esperada, self.pedido.pedido_id)
+        self.ir(self.contagem)
+
+    def item_conferido(self, codigo, registro, resultado):
+        self.pedido.resultado_item(codigo, registro, resultado)
+        self.ir(self.pedido)
+
+    def abrir_etiqueta(self, etiqueta):
+        self.etiqueta.abrir(etiqueta)
+        self.ir(self.etiqueta)
 
     def mostrar_mensagem(self, titulo, texto, tipo="sucesso", depois=None, segundos=3):
         self.mensagem.mostrar(titulo, texto, tipo, depois or self.ir_menu, segundos)
@@ -201,6 +232,8 @@ class JanelaPrincipal(QWidget):
         elif tipo == "cadastros":
             if self.pilha.currentWidget() is self.produtos:
                 self.produtos.recarregar()
+            elif self.pilha.currentWidget() is self.pedidos:
+                self.pedidos.recarregar()
         self._atualizar_barra()
 
     # ================= barra de status e saida automatica =================

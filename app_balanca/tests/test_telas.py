@@ -33,8 +33,11 @@ def sistema(app, tmp_path):
                         "operadores": {UID: {"nome": "Rodrigo Sanches", "ativo": True}},
                         "produtos": {"P001": {"nome": "Parafuso", "peso_unit_g": 10.4,
                                               "estoque_atual": 0},
-                                     "P009": {"nome": "Sem peso", "estoque_atual": 0}},
-                        "pedidos": {}})
+                                     "P009": {"nome": "Sem peso", "estoque_atual": 0},
+                                     "P002": {"nome": "Porca", "peso_unit_g": 2.6,
+                                              "estoque_atual": 50}},
+                        "pedidos": {"PED001": {"destino": "Correios - SEDEX", "status": "pendente",
+                                               "itens": {"P001": {"qtd": 10}, "P002": {"qtd": 10}}}}})
     app.processEvents()
     yield ctrl, balanca, janela, sim, enviados
     janela.close()
@@ -107,3 +110,45 @@ def test_sair_volta_ao_descanso(app, sistema):
     ctrl.sair()
     app.processEvents()
     assert janela.pilha.currentWidget() is janela.descanso
+
+
+def conferir_item(app, balanca, janela, codigo, esperada, gramas):
+    janela.pesar_item(codigo, esperada)
+    colocar_peso(app, balanca, janela, gramas)
+    janela.contagem.confirmar()
+    app.processEvents()
+
+
+def test_conferencia_ok_gera_etiqueta(app, sistema):
+    ctrl, balanca, janela, sim, enviados = sistema
+    ctrl.identificar(UID)
+    janela.abrir_conferencia()
+    janela.abrir_pedido("PED001")
+    assert not janela.pedido.finalizar_botao.isEnabled()
+    conferir_item(app, balanca, janela, "P001", 10, 104)
+    assert janela.pilha.currentWidget() is janela.pedido
+    conferir_item(app, balanca, janela, "P002", 10, 26)
+    assert janela.pedido.finalizar_botao.isEnabled()
+
+    janela.pedido.finalizar()
+    app.processEvents()
+    assert janela.pilha.currentWidget() is janela.etiqueta
+    et = janela.etiqueta.etiqueta
+    assert et["qr"] == "PED001" and len(et["itens"]) == 2
+    assert not janela.etiqueta.imprimir_botao.isEnabled()          # sem impressora: so previa
+    assert ctrl.dados.cadastro("pedidos", "PED001")["status"] == "conferido"
+    assert ctrl.dados.cadastro("produtos", "P002")["estoque_atual"] == 40
+    janela.etiqueta.previa.grab()                                    # desenha sem erro (QR)
+
+
+def test_conferencia_com_falta_nao_libera(app, sistema):
+    ctrl, balanca, janela, sim, enviados = sistema
+    ctrl.identificar(UID)
+    janela.abrir_pedido("PED001")
+    conferir_item(app, balanca, janela, "P001", 10, 83.2)    # 8 pecas
+    conferir_item(app, balanca, janela, "P002", 10, 26)
+    janela.pedido.finalizar()
+    app.processEvents()
+    assert janela.pilha.currentWidget() is janela.mensagem
+    assert "Faltam 2" in janela.mensagem.texto.text()
+    assert ctrl.dados.cadastro("pedidos", "PED001")["status"] == "pendente"

@@ -16,7 +16,7 @@ def botao(texto, tipo=None, ao_clicar=None, altura=90):
 
 
 def rotulo(texto="", papel=None, alinhamento=Qt.AlignCenter):
-    """Texto. papel: 'titulo', 'subtitulo', 'gigante', 'peso', 'aviso', 'erro', 'info'."""
+    """Texto. papel: 'titulo', 'subtitulo', 'gigante', 'peso', 'aviso', 'erro', 'ok', 'info'."""
     r = QLabel(texto)
     if papel:
         r.setProperty("papel", papel)
