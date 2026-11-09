@@ -12,7 +12,7 @@ def carregar_config():
     for nome in ("config.json", "config_exemplo.json"):
         caminho = os.path.join(PASTA_APP, nome)
         if os.path.exists(caminho):
-            with open(caminho, encoding="utf-8") as f:
+            with open(caminho, encoding="utf-8-sig") as f:  # aceita arquivo com ou sem BOM
                 return json.load(f)
     return {}
 
