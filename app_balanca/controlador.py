@@ -8,6 +8,7 @@ Avisos enviados para a tela (avisar(tipo, info)):
   "status"       info = evento status da ESP32 (wifi, fila...)
   "presenca"     info = {"perto": bool}
   "login"        info = {"uid", "nome"}
+  "verificando"  info = {"uid"} (chaveiro fora da copia local: buscando cadastros novos)
   "desconhecido" info = {"uid"}
   "logout"       info = None
   "cadastros"    info = None (chegou um sync novo)
@@ -35,6 +36,8 @@ class Controlador:
         self.operador = None                       # {"uid", "nome"} de quem esta logado
         self.esp32_conectada = False
         self.status_esp32 = {}
+        self.wifi = None                           # ultimo estado de Wi-Fi informado pela ESP32
+        self._uid_aguardando_sync = None           # chaveiro desconhecido esperando cadastros novos
 
     # ================= eventos da ESP32 =================
     def ao_conexao(self, conectado, porta=None):
@@ -62,6 +65,11 @@ class Controlador:
             self._tratar_sync(ev)
         elif tipo == "status":
             self.status_esp32 = ev
+            wifi_agora = bool(ev.get("wifi"))
+            if wifi_agora and not self.wifi:
+                # a internet acabou de voltar: busca os cadastros mais novos
+                self.enviar_esp32({"c": "sync"})
+            self.wifi = wifi_agora
             self.avisar("status", ev)
         elif tipo == "log":
             self.avisar("log", {"msg": ev.get("msg", "")})
@@ -69,10 +77,15 @@ class Controlador:
     def _tratar_sync(self, ev):
         if not ev.get("ok", True):
             self.avisar("log", {"msg": "Sem sync: %s (usando os dados guardados)" % ev.get("erro")})
-            return
-        for tipo in ("operadores", "produtos", "pedidos"):
-            self.dados.salvar_cadastros(tipo, ev.get(tipo) or {})
-        self.avisar("cadastros", None)
+        else:
+            for tipo in ("operadores", "produtos", "pedidos"):
+                self.dados.salvar_cadastros(tipo, ev.get(tipo) or {})
+            self.avisar("cadastros", None)
+        # um chaveiro esperava os cadastros novos: decide agora (cadastrado ou desconhecido)
+        uid = self._uid_aguardando_sync
+        if uid:
+            self._uid_aguardando_sync = None
+            self._identificar_com_cadastro_atual(uid)
 
     def _tratar_ack(self, ev):
         id_ = ev.get("id")
@@ -89,8 +102,29 @@ class Controlador:
 
     # ================= operador (chaveiro) =================
     def identificar(self, uid):
+        """Devolve True (logou), False (desconhecido) ou None (conferindo na nuvem).
+        Chaveiro que nao esta na copia local: antes de recusar, pede os cadastros
+        mais novos (alguem pode ter acabado de cadastra-lo no Firebase)."""
+        if self._operador_valido(uid):
+            return self._identificar_com_cadastro_atual(uid)
+        if self.wifi and self._uid_aguardando_sync != uid:
+            self._uid_aguardando_sync = uid
+            self.enviar_esp32({"c": "sync"})
+            self.avisar("verificando", {"uid": uid})
+            return None
+        # sem internet, ou encostou de novo enquanto esperava: decide com o que tem
+        self._uid_aguardando_sync = None
+        return self._identificar_com_cadastro_atual(uid)
+
+    def _operador_valido(self, uid):
         operador = self.dados.cadastro("operadores", uid)
-        if operador and operador.get("ativo", True):
+        if operador and operador.get("ativo", True) not in (False, "false"):
+            return operador
+        return None
+
+    def _identificar_com_cadastro_atual(self, uid):
+        operador = self._operador_valido(uid)
+        if operador:
             self.operador = {"uid": uid, "nome": operador.get("nome", uid)}
             self.sinal("ok")
             self.avisar("login", self.operador)

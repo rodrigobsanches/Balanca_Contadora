@@ -11,6 +11,7 @@ Comandos que voce pode digitar:
     inventario P001 1040      conta P001 com 1040 g no prato e registra (precisa de operador logado)
     pendentes                 mostra o estado dos registros
     wifi on | wifi off        liga/desliga o Wi-Fi da ESP32 (teste da fila)
+    reiniciar                 reinicia o main.py da ESP32 (se ela ficou parada no >>>)
     sair                      fecha o monitor
 """
 import json
@@ -54,7 +55,10 @@ def main():
         print("  <<< ESP32:", json.dumps(ev, ensure_ascii=False)[:150])
         ctrl.tratar_evento(ev)
 
-    ligacao = LigacaoESP32(ao_evento, ctrl.ao_conexao, config.get("porta_esp32", "auto"))
+    def ao_texto(linha):
+        print("  ... ESP32 (texto):", linha[:150])
+
+    ligacao = LigacaoESP32(ao_evento, ctrl.ao_conexao, config.get("porta_esp32", "auto"), ao_texto)
     ligacao.iniciar()
     print("Procurando a ESP32... (digite 'sair' para fechar)")
 
@@ -70,6 +74,9 @@ def main():
             break
         elif cmd == "sync":
             enviar({"c": "sync"})
+        elif cmd == "reiniciar":
+            print("Reiniciando o programa da ESP32 (Ctrl+C, Ctrl+D)...")
+            ligacao.reiniciar_programa()
         elif cmd == "cadastros":
             for tipo in ("operadores", "produtos", "pedidos"):
                 print(tipo, json.dumps(dados.cadastros(tipo), ensure_ascii=False, indent=1))
