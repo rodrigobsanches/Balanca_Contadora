@@ -9,7 +9,7 @@
 
 | Comando | Exemplo | O que a ESP32 faz |
 |---|---|---|
-| `ping` | `{"c":"ping"}` | responde `{"t":"pong","fw":"0.2"}` |
+| `ping` | `{"c":"ping"}` | responde `{"t":"pong","fw":"0.3"}` |
 | `status` | `{"c":"status"}` | responde com o evento `status` na hora |
 | `wifi` | `{"c":"wifi","ligado":false}` | desliga (ou religa, com `true`) o Wi-Fi de propósito, para testar e demonstrar a fila offline |
 | `sinal` | `{"c":"sinal","estado":"ok"}` | LED e buzzer: `ocioso`, `aguardando`, `ok`, `erro`, `atencao` |

@@ -80,6 +80,7 @@ class Controlador:
         else:
             for tipo in ("operadores", "produtos", "pedidos"):
                 self.dados.salvar_cadastros(tipo, ev.get(tipo) or {})
+            self.wifi = True   # sync deu certo: a internet esta ok (evita pedir de novo)
             self.avisar("cadastros", None)
         # um chaveiro esperava os cadastros novos: decide agora (cadastrado ou desconhecido)
         uid = self._uid_aguardando_sync
