@@ -245,6 +245,12 @@ class Controlador:
         self.sinal("ok")
         return True
 
+    def conteudo_qr(self, pedido_id):
+        """Com 'url_dashboard' no config, o QR e o link do dashboard ja aberto no pedido
+        (a camera do celular abre direto). Sem ele, so o numero do pedido."""
+        url = (self.config.get("url_dashboard") or "").strip().rstrip("/")
+        return "%s/?pedido=%s" % (url, pedido_id) if url else pedido_id
+
     def dados_etiqueta(self, pedido_id, registros):
         """Conteudo da etiqueta 'conferido' (a previa na tela e a impressora usam o mesmo)."""
         pedido = self.dados.cadastro("pedidos", pedido_id) or {}
@@ -258,6 +264,6 @@ class Controlador:
             "peso_total_g": round(liquido, 1),
             "operador": self.operador["nome"] if self.operador else "",
             "data_hora": self.relogio(),
-            "qr": pedido_id,   # o dashboard mostra o pedido e as contagens dele pelo QR
+            "qr": self.conteudo_qr(pedido_id),
             "balanca": self.id_balanca,
         }

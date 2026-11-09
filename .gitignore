@@ -44,6 +44,7 @@ dist/
 # Editores e sistema
 # ------------------------------------------------------------
 .vscode/
+.claude/
 .idea/
 Thumbs.db
 .DS_Store
