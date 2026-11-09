@@ -54,16 +54,17 @@ class BarraStatus(QFrame):
         super().__init__()
         self.setObjectName("barra_status")
         self.setFixedHeight(36)
+        self.balanca = rotulo("", None, Qt.AlignLeft | Qt.AlignVCenter)
         self.esp32 = rotulo("ESP32: procurando...", None, Qt.AlignLeft | Qt.AlignVCenter)
         self.wifi = rotulo("", None, Qt.AlignLeft | Qt.AlignVCenter)
         self.envio = rotulo("", None, Qt.AlignLeft | Qt.AlignVCenter)
         self.operador = rotulo("", None, Qt.AlignRight | Qt.AlignVCenter)
         self.relogio = rotulo("", None, Qt.AlignRight | Qt.AlignVCenter)
-        for r in (self.esp32, self.wifi, self.envio, self.operador, self.relogio):
+        for r in (self.balanca, self.esp32, self.wifi, self.envio, self.operador, self.relogio):
             r.setWordWrap(False)
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 0, 10, 0)
-        for w in (self.esp32, self.wifi, self.envio):
+        for w in (self.balanca, self.esp32, self.wifi, self.envio):
             layout.addWidget(w)
         layout.addStretch()
         layout.addWidget(self.operador)
@@ -247,6 +248,12 @@ class JanelaPrincipal(QWidget):
 
     def _atualizar_barra(self):
         c = self.ctrl
+        if self.balanca.nome == "simulada":
+            self.barra.balanca.setText("Balança: simulada")
+        elif getattr(self.balanca, "conectada", True):
+            self.barra.balanca.setText("Balança: conectada")
+        else:
+            self.barra.balanca.setText("Balança: SEM CONEXÃO")
         if c.esp32_conectada:
             self.barra.esp32.setText("ESP32: conectada")
             st = c.status_esp32

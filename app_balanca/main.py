@@ -38,7 +38,9 @@ def montar(config, enviar_esp32=None):
     """Cria controlador, balanca e janelas. Separado do main() para os testes usarem."""
     dados = DadosLocais(caminho_dados(config))
     balanca = criar_balanca(config)
-    balanca.conectar()
+    balanca.conectada = bool(balanca.conectar())
+    if not balanca.conectada:
+        print("ATENCAO: a balanca nao conectou. Veja o log da balanca.")
     ponte = Ponte()
     ctrl = Controlador(config, dados, enviar_esp32 or (lambda cmd: False), avisar=ponte.aviso.emit)
     ponte.evento.connect(ctrl.tratar_evento)
