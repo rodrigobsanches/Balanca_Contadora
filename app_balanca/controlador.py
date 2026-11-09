@@ -244,3 +244,20 @@ class Controlador:
         self._operacao("patch", "pedidos/" + pedido_id, campos)
         self.sinal("ok")
         return True
+
+    def dados_etiqueta(self, pedido_id, registros):
+        """Conteudo da etiqueta 'conferido' (a previa na tela e a impressora usam o mesmo)."""
+        pedido = self.dados.cadastro("pedidos", pedido_id) or {}
+        liquido = sum(r["peso_total_g"] - (r.get("tara_g") or 0) for r in registros)
+        return {
+            "titulo": "PEDIDO %s - CONFERIDO" % pedido_id,
+            "pedido_id": pedido_id,
+            "destino": pedido.get("destino", ""),
+            "itens": [{"produto": r["produto"], "nome": r["produto_nome"],
+                       "quantidade": r["quantidade"]} for r in registros],
+            "peso_total_g": round(liquido, 1),
+            "operador": self.operador["nome"] if self.operador else "",
+            "data_hora": self.relogio(),
+            "qr": pedido_id,   # o dashboard mostra o pedido e as contagens dele pelo QR
+            "balanca": self.id_balanca,
+        }

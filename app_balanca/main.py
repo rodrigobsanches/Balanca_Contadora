@@ -21,6 +21,7 @@ from config_app import caminho_dados, carregar_config  # noqa: E402
 from controlador import Controlador  # noqa: E402
 from dados_locais import DadosLocais  # noqa: E402
 from esp32_serial import LigacaoESP32  # noqa: E402
+from impressora_base import criar_impressora  # noqa: E402
 from telas.janela import JanelaPrincipal  # noqa: E402
 from telas.simulacao import JanelaSimulacao  # noqa: E402
 
@@ -42,7 +43,7 @@ def montar(config, enviar_esp32=None):
     ctrl = Controlador(config, dados, enviar_esp32 or (lambda cmd: False), avisar=ponte.aviso.emit)
     ponte.evento.connect(ctrl.tratar_evento)
     ponte.conexao.connect(ctrl.ao_conexao)
-    janela = JanelaPrincipal(config, ctrl, balanca)
+    janela = JanelaPrincipal(config, ctrl, balanca, criar_impressora(config))
     ponte.aviso.connect(janela.ao_aviso)
     simulacao = None
     if balanca.nome == "simulada":

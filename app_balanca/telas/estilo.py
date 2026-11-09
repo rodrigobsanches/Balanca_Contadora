@@ -83,6 +83,10 @@ QLabel[papel="erro"] {{
     font-size: 26px; font-weight: 700; color: white;
     background: {COR['erro']}; border-radius: 12px; padding: 14px 20px;
 }}
+QLabel[papel="ok"] {{
+    font-size: 26px; font-weight: 700; color: white;
+    background: {COR['sucesso']}; border-radius: 12px; padding: 14px 20px;
+}}
 QLabel[papel="info"] {{
     font-size: 26px; font-weight: 600; color: white;
     background: {COR['primaria']}; border-radius: 12px; padding: 14px 20px;

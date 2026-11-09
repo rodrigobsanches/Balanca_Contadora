@@ -1,12 +1,15 @@
-"""Tela 3b - Contagem: pecas no prato -> quantidade BEM grande -> Confirmar.
+"""Tela de contagem: pecas no prato -> quantidade BEM grande -> Confirmar.
 
-Serve para o inventario. A conferencia (Fase 3c) reaproveita esta tela.
+Dois modos:
+  inventario  -> Confirmar registra a contagem e substitui o estoque
+  conferencia -> mostra a quantidade esperada do pedido; Confirmar registra o item
+                 (OK / FALTA / SOBRA) e volta para a tela do pedido
 """
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
 
-from contagem import avisos_de_precisao, contar_pecas
-from telas.componentes import botao, cartao, rotulo
+from contagem import avisos_de_precisao, conferir, contar_pecas
+from telas.componentes import botao, cartao, mudar_papel, rotulo
 from telas.estilo import formatar_numero, formatar_peso
 
 NOMES_METODO = {"cadastro": "do cadastro", "amostra": "pela amostra"}
@@ -20,11 +23,16 @@ class TelaContagem(QWidget):
         self.produto = {}
         self.peso_unit = None
         self.metodo = "cadastro"
+        self.modo = "inventario"
+        self.esperada = None       # so na conferencia
+        self.pedido_id = None
         self._contagem = None      # ultima contagem com peso estavel
         self._peso_liquido = None
 
         # --- esquerda: o numero grande ---
         self.nome = rotulo("", "subtitulo")
+        self.esperado = rotulo("", "info")
+        self.esperado.hide()
         self.quantidade = rotulo("0", "gigante")
         self.unidade = rotulo("peças", "subtitulo")
         self.estado = rotulo("", "subtitulo")
@@ -34,6 +42,7 @@ class TelaContagem(QWidget):
         e = QVBoxLayout(esquerda)
         e.setContentsMargins(30, 20, 30, 20)
         e.addWidget(self.nome)
+        e.addWidget(self.esperado)
         e.addStretch()
         e.addWidget(self.quantidade)
         e.addWidget(self.unidade)
@@ -63,7 +72,7 @@ class TelaContagem(QWidget):
         direita.addStretch()
         direita.addLayout(acoes)
         direita.addWidget(self.botao_confirmar)
-        direita.addWidget(botao("Voltar", "secundario", janela.abrir_inventario, altura=60))
+        direita.addWidget(botao("Voltar", "secundario", janela.voltar_da_contagem, altura=60))
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(30, 12, 30, 12)
@@ -72,8 +81,12 @@ class TelaContagem(QWidget):
         layout.addLayout(direita, 2)
 
     # ---------- abrir e configurar ----------
-    def abrir(self, codigo):
+    def abrir(self, codigo, modo="inventario", esperada=None, pedido_id=None):
         self.codigo = codigo
+        self.modo = modo
+        self.esperada = esperada
+        self.pedido_id = pedido_id
+        self.esperado.setVisible(modo == "conferencia")
         self.produto = self.janela.ctrl.dados.cadastro("produtos", codigo) or {}
         self.nome.setText("%s  (%s)" % (self.produto.get("nome", codigo), codigo))
         unit = self.produto.get("peso_unit_g")
@@ -119,14 +132,36 @@ class TelaContagem(QWidget):
         self.estado.setText(estado)
         self.avisos.setText("\n".join(avisos))
         self.avisos.setVisible(bool(avisos))
-        self.botao_confirmar.setEnabled(bool(quantidade))
+        if self.modo == "conferencia":
+            self._mostrar_comparacao(quantidade)
+            # na conferencia, zero pecas tambem vale (o item pode estar faltando inteiro)
+            self.botao_confirmar.setEnabled(quantidade is not None and self._contagem is not None)
+        else:
+            self.botao_confirmar.setEnabled(bool(quantidade))
+
+    def _mostrar_comparacao(self, quantidade):
+        texto = "Esperado: %s peças" % formatar_numero(self.esperada)
+        papel = "info"
+        if quantidade is not None and self._contagem is not None:
+            r = conferir(quantidade, self.esperada)
+            texto += "   ·   " + ("Confere" if r.resultado == "OK" else r.mensagem)
+            papel = "ok" if r.resultado == "OK" else "erro"
+        self.esperado.setText(texto)
+        mudar_papel(self.esperado, papel)
 
     # ---------- confirmar ----------
     def confirmar(self):
         c = self._contagem
-        if not c or not c.quantidade:
+        if not c or (not c.quantidade and self.modo != "conferencia"):
             return
         tara = self.janela.balanca.tara_g()
+        if self.modo == "conferencia":
+            registro, resultado = self.janela.ctrl.conferir_item(
+                self.pedido_id, self.codigo, c, self.esperada,
+                peso_total_g=self._peso_liquido + tara, tara_g=tara,
+                peso_unit_g=self.peso_unit, metodo=self.metodo)
+            self.janela.item_conferido(self.codigo, registro, resultado)
+            return
         self.janela.ctrl.confirmar_inventario(
             self.codigo, c, peso_total_g=self._peso_liquido + tara, tara_g=tara,
             peso_unit_g=self.peso_unit, metodo=self.metodo)
