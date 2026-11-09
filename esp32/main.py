@@ -16,9 +16,20 @@ from rede import Rede
 from serial_app import SerialApp, enviar
 from sinalizacao import Sinalizacao, PADROES
 
-VERSAO_FW = "0.2"
-ESPERA_APOS_FALHA_MS = 10000   # depois de uma falha de envio, espera antes de tentar de novo
-INTERVALO_STATUS_SERIAL_MS = 30000
+VERSAO_FW = "0.3"
+
+
+def ajuste(nome, padrao):
+    """Le uma calibracao do config.py. Se a linha nao existir (config antigo), usa o padrao."""
+    return getattr(config, nome, padrao)
+
+
+# Calibracoes: todas ficam no config.py (secao "Calibracao"). Os valores aqui sao so o padrao.
+ESPERA_APOS_FALHA_MS = ajuste("ESPERA_APOS_FALHA_S", 10) * 1000
+INTERVALO_STATUS_SERIAL_MS = ajuste("INTERVALO_STATUS_SERIAL_S", 30) * 1000
+RFID_TEMPO_LEITURA_MS = ajuste("RFID_TEMPO_LEITURA_MS", 50)
+RFID_IGNORAR_REPETIDO_MS = ajuste("RFID_IGNORAR_REPETIDO_S", 3) * 1000
+PRESENCA_INTERVALO_MS = ajuste("PRESENCA_INTERVALO_MS", 100)
 
 
 def log(msg):
@@ -31,7 +42,8 @@ sinal = Sinalizacao(config.PINO_RGB, config.PINO_LED_VERDE, config.PINO_LED_AZUL
 
 presenca = Presenca(config.PINO_TRIG, config.PINO_ECHO,
                     config.DISTANCIA_PERTO_CM, config.DISTANCIA_LONGE_CM,
-                    config.TEMPO_CHEGOU_MS, config.TEMPO_SAIU_MS)
+                    config.TEMPO_CHEGOU_MS, config.TEMPO_SAIU_MS,
+                    intervalo_ms=PRESENCA_INTERVALO_MS)
 
 i2c = I2C(0, sda=Pin(config.PINO_SDA), scl=Pin(config.PINO_SCL), freq=100000)
 time.sleep_ms(500)
@@ -205,10 +217,11 @@ while True:
         sinal.definir("aguardando" if mudou else "ocioso")
 
     if leitor:
-        uid = leitor.ler_uid(timeout_ms=50)
+        uid = leitor.ler_uid(timeout_ms=RFID_TEMPO_LEITURA_MS)
         agora = time.ticks_ms()
         # evita repetir o mesmo chaveiro enquanto ele continua encostado
-        if uid and (uid != ultimo_uid or time.ticks_diff(agora, ultimo_uid_ms) > 3000):
+        if uid and (uid != ultimo_uid
+                    or time.ticks_diff(agora, ultimo_uid_ms) > RFID_IGNORAR_REPETIDO_MS):
             enviar({"t": "rfid", "uid": uid})
             sinal.definir("ok")
             ultimo_uid = uid

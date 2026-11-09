@@ -31,8 +31,25 @@ BUZZER_PASSIVO = False # True se o buzzer so toca com sinal PWM (passivo)
 PINO_TRIG = 17         # HC-SR04
 PINO_ECHO = 18         # HC-SR04 (com divisor de tensao!)
 
-# --- Presenca ---
+# =====================================================================
+# Calibracao: todos os ajustes finos ficam aqui (nada fixo no codigo).
+# Se uma linha faltar, o programa usa o valor padrao mostrado.
+# =====================================================================
+
+# --- Presenca (sensor ultrassonico HC-SR04) ---
+# Use esp32/testes/teste_presenca.py para ver a distancia medida e escolher os valores.
+# Alcance do sensor: ~2 a 400 cm, em um cone estreito (~15 graus) a frente dele.
 DISTANCIA_PERTO_CM = 60   # abaixo disso, "alguem chegou"
-DISTANCIA_LONGE_CM = 80   # acima disso, "foi embora" (histerese)
-TEMPO_CHEGOU_MS = 1000    # precisa ficar perto este tempo
-TEMPO_SAIU_MS = 5000      # precisa ficar longe este tempo
+DISTANCIA_LONGE_CM = 80   # acima disso, "foi embora" (deixe uns 20 cm acima do PERTO)
+TEMPO_CHEGOU_MS = 1000    # precisa ficar perto este tempo (evita alarme com quem so passa)
+TEMPO_SAIU_MS = 5000      # precisa ficar longe este tempo (evita sair por um passo para tras)
+PRESENCA_INTERVALO_MS = 100  # de quanto em quanto tempo mede (a decisao usa a mediana de 5)
+
+# --- RFID (leitor PN532) ---
+# O alcance NAO e ajustavel por aqui: com chaveiros de 13,56 MHz e de ~3 a 5 cm (fisica da antena).
+RFID_TEMPO_LEITURA_MS = 50    # quanto tempo procura um chaveiro a cada volta do laco
+RFID_IGNORAR_REPETIDO_S = 3   # o mesmo chaveiro so conta de novo depois deste tempo afastado
+
+# --- Envio para a nuvem ---
+ESPERA_APOS_FALHA_S = 10        # depois de uma falha, espera isto antes de tentar de novo
+INTERVALO_STATUS_SERIAL_S = 30  # de quanto em quanto tempo manda o status para o app
