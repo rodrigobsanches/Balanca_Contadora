@@ -20,6 +20,14 @@ class Balanca:
         """Peso em gramas quando estavel; None enquanto o peso esta mudando."""
         raise NotImplementedError
 
+    def peso_atual_g(self):
+        """Peso em gramas mesmo enquanto muda (so para mostrar). Padrao: o estavel."""
+        return self.peso_estavel_g()
+
+    def tara_g(self):
+        """Tara atual em gramas (vai no registro da contagem). Padrao: 0."""
+        return 0.0
+
     def tarar(self):
         """Faz a tara com o que esta no prato. Devolve True se deu certo."""
         raise NotImplementedError

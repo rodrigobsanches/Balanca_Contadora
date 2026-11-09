@@ -30,11 +30,21 @@ class BalancaSimulada(Balanca):
             self._peso_bruto = float(gramas)
             self._mudou_em = time.monotonic()
 
+    def peso_bruto_g(self):
+        """Peso total no prato (sem descontar a tara). Usado pela janela de simulacao."""
+        return self._peso_bruto
+
+    def peso_atual_g(self):
+        liquido = self._peso_bruto - self._tara
+        return round(liquido / self._divisao) * self._divisao
+
     def peso_estavel_g(self):
         if time.monotonic() - self._mudou_em < self._tempo_estavel_s:
             return None
-        liquido = self._peso_bruto - self._tara
-        return round(liquido / self._divisao) * self._divisao
+        return self.peso_atual_g()
+
+    def tara_g(self):
+        return self._tara
 
     def tarar(self):
         self._tara = self._peso_bruto

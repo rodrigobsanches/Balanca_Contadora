@@ -53,7 +53,16 @@ pytest app_balanca/tests esp32/tests_pc
 ```
 
 O app da balança roda em **modo simulado** quando não há balança conectada, então dá para
-testar tudo no PC.
+testar tudo no PC:
+
+```bash
+# copie app_balanca/config_exemplo.json para app_balanca/config.json (opcional)
+python app_balanca/main.py
+```
+
+Abre a janela do app (1366 × 768, o tamanho da tela da balança) e uma janela **Simulação**
+para colocar peso no prato, encostar um chaveiro e simular presença. Com a ESP32 no USB,
+o chaveiro e o sensor de verdade também funcionam e os registros vão para o Firebase.
 
 ## Segurança
 
