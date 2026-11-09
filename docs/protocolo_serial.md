@@ -11,6 +11,7 @@
 |---|---|---|
 | `ping` | `{"c":"ping"}` | responde `{"t":"pong","fw":"0.2"}` |
 | `status` | `{"c":"status"}` | responde com o evento `status` na hora |
+| `wifi` | `{"c":"wifi","ligado":false}` | desliga (ou religa, com `true`) o Wi-Fi de propósito, para testar e demonstrar a fila offline |
 | `sinal` | `{"c":"sinal","estado":"ok"}` | LED e buzzer: `ocioso`, `aguardando`, `ok`, `erro`, `atencao` |
 | `enviar` | `{"c":"enviar","id":"<uuid>","path":"contagens/<uuid>","dados":{...}}` | **PUT** no Firebase; se falhar, guarda na fila offline |
 | `atualizar` | `{"c":"atualizar","id":"<uuid>","path":"produtos/P001","dados":{"estoque_atual":120}}` | **PATCH** no Firebase |
