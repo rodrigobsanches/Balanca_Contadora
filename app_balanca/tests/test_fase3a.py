@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from contagem import contar_pecas  # noqa: E402
 from controlador import Controlador  # noqa: E402
 from dados_locais import DadosLocais  # noqa: E402
-from esp32_serial import escolher_porta, interpretar_linha  # noqa: E402
+from esp32_serial import ControleEnvio, escolher_porta, interpretar_linha  # noqa: E402
 
 UID_RODRIGO = "36:BD:9A:AC"
 
@@ -78,6 +78,34 @@ def test_interpretar_linha():
     assert interpretar_linha("MPY: soft reboot") is None
     assert interpretar_linha('{"c":"ping"}') is None   # eco de comando, nao e evento
     assert interpretar_linha("{quebrado") is None
+
+
+def test_controle_envio_um_comando_longo_por_vez():
+    c = ControleEnvio(tempo_limite_s=15)
+    c.adicionar({"c": "enviar", "id": "a"})
+    c.adicionar({"c": "atualizar", "id": "b"})
+    c.adicionar({"c": "sinal", "estado": "ok"})
+    assert c.proximo(0)["id"] == "a"
+    assert c.proximo(1) == {"c": "sinal", "estado": "ok"}   # curto passa na frente
+    assert c.proximo(2) is None                              # "b" espera o ack de "a"
+    c.resposta({"t": "ack", "id": "outro", "ok": True})
+    assert c.proximo(3) is None
+    c.resposta({"t": "ack", "id": "a", "ok": False, "fila": True})
+    assert c.proximo(4)["id"] == "b"
+
+
+def test_controle_envio_sync_e_tempo_limite():
+    c = ControleEnvio(tempo_limite_s=15)
+    c.adicionar({"c": "sync"})
+    c.adicionar({"c": "enviar", "id": "a"})
+    assert c.proximo(0)["c"] == "sync"
+    assert c.proximo(5) is None
+    assert c.proximo(16)["id"] == "a"          # a resposta do sync nao veio: segue
+    c.resposta({"t": "hello"})                 # placa reiniciou: libera
+    c.adicionar({"c": "enviar", "id": "b"})
+    assert c.proximo(17)["id"] == "b"
+    c.limpar()
+    assert c.proximo(18) is None
 
 
 # ---------------- dados locais ----------------

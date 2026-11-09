@@ -17,6 +17,18 @@
 | `atualizar` | `{"c":"atualizar","id":"<uuid>","path":"produtos/P001","dados":{"estoque_atual":120}}` | **PATCH** no Firebase |
 | `sync` | `{"c":"sync"}` | baixa operadores, produtos e pedidos e responde com `t:"sync"` |
 
+### Controle de envio (obrigatório para o app)
+
+A ESP32 só consegue guardar ~256 caracteres recebidos enquanto está ocupada (leitor RFID,
+sensor e, principalmente, as chamadas HTTPS, que travam 1 a 3 s). Uma contagem tem ~650
+caracteres. Por isso o app (`app_balanca/esp32_serial.py`):
+
+1. manda cada comando em **pedaços de 64 bytes**, com 40 ms entre eles;
+2. manda **um comando que usa a internet por vez** (`enviar`, `atualizar`, `sync`): o próximo
+   só sai depois da resposta (`ack` com o mesmo `id`, ou `sync`), de um `hello` ou de 15 s;
+3. comandos curtos (`sinal`, `ping`, `status`, `wifi`) não esperam;
+4. ao abrir a porta, manda um `\n` solto para descartar restos de um comando incompleto.
+
 ## ESP32 → App (eventos, campo `t`)
 
 | Evento | Exemplo |
