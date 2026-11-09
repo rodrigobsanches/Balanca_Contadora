@@ -49,7 +49,7 @@ Cada pasta terá o seu passo a passo. Por enquanto:
 ```bash
 # testes no PC: lógica de contagem e partes do firmware que não dependem do hardware
 pip install -r app_balanca/requirements.txt
-pytest app_balanca/tests esp32/tests_pc
+pytest app_balanca/tests esp32/tests_pc dashboard/tests
 ```
 
 O app da balança roda em **modo simulado** quando não há balança conectada, então dá para
@@ -63,6 +63,19 @@ python app_balanca/main.py
 Abre a janela do app (1366 × 768, o tamanho da tela da balança) e uma janela **Simulação**
 para colocar peso no prato, encostar um chaveiro e simular presença. Com a ESP32 no USB,
 o chaveiro e o sensor de verdade também funcionam e os registros vão para o Firebase.
+
+### Dashboard
+
+```bash
+pip install -r dashboard/requirements.txt
+# copie dashboard/.streamlit/secrets_exemplo.toml para secrets.toml e preencha
+python dashboard/gerar_senha.py        # cria a linha de cada usuário (senha guardada só como hash)
+streamlit run dashboard/app.py
+```
+
+Só entra quem tem usuário e senha. Perfis: **admin** (vê tudo e altera Cadastros) e
+**leitura** (só consulta). Abrir com `?pedido=PED001` leva direto ao pedido na Auditoria;
+o QR code da etiqueta usa esse link quando `url_dashboard` está no config do app.
 
 ## Segurança
 

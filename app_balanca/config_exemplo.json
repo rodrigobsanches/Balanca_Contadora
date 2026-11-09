@@ -10,5 +10,6 @@
   "segundos_para_sair": 60,
   "voz": false,
   "imprimir_etiqueta": false,
-  "layout_etiqueta": "layouts/etiqueta_conferido.xml"
+  "layout_etiqueta": "layouts/etiqueta_conferido.xml",
+  "url_dashboard": ""
 }

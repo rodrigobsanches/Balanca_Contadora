@@ -236,3 +236,9 @@ def test_conferencia_com_falta_nao_libera(ctrl, dados):
     assert not ctrl.finalizar_conferencia("PED001", [reg])
     assert dados.cadastro("produtos", "P001")["estoque_atual"] == 50
     assert dados.cadastro("pedidos", "PED001")["status"] == "pendente"
+
+
+def test_qr_vira_link_do_dashboard(dados, esp):
+    c = Controlador({"url_dashboard": "https://exemplo.streamlit.app/"}, dados, esp)
+    assert c.conteudo_qr("PED001") == "https://exemplo.streamlit.app/?pedido=PED001"
+    assert Controlador({}, dados, esp).conteudo_qr("PED001") == "PED001"

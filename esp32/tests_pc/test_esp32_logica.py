@@ -10,8 +10,12 @@ import types
 PASTA_ESP32 = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PASTA_ESP32)
 
-# O firebase.py importa "requests" (existe na ESP32). No PC basta um modulo vazio.
-sys.modules.setdefault("requests", types.ModuleType("requests"))
+# O firebase.py importa "requests" (existe na ESP32). Se o PC nao tiver, um modulo vazio basta.
+# (Nao substituir o requests de verdade: o Streamlit e o firebase-admin usam ele.)
+try:
+    import requests  # noqa: F401
+except ImportError:
+    sys.modules["requests"] = types.ModuleType("requests")
 
 from fila import Fila  # noqa: E402
 from firebase import caminho_valido  # noqa: E402
