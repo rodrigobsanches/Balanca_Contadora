@@ -130,6 +130,32 @@ def test_chaveiro_desconhecido_e_bloqueado_e_registrado(ctrl, esp):
     assert {"c": "sinal", "estado": "erro"} in esp.comandos
 
 
+def test_wifi_voltando_pede_sync(ctrl, esp):
+    ctrl.tratar_evento({"t": "status", "wifi": False, "fila": 0})
+    assert esp.de_tipo("sync") == []
+    ctrl.tratar_evento({"t": "status", "wifi": True, "fila": 0})
+    ctrl.tratar_evento({"t": "status", "wifi": True, "fila": 0})   # continua ligado: nao repete
+    assert len(esp.de_tipo("sync")) == 1
+
+
+def test_chaveiro_novo_confere_na_nuvem_antes_de_recusar(ctrl, esp, dados):
+    ctrl.tratar_evento({"t": "status", "wifi": True})
+    assert ctrl.identificar("NOVO:01") is None              # ainda nao sabe: pede sync
+    assert ("verificando", {"uid": "NOVO:01"}) in ctrl.avisos
+    assert esp.de_tipo("enviar") == []                      # nao registrou como desconhecido
+    ctrl.tratar_evento({"t": "sync", "ok": True, "produtos": {}, "pedidos": {},
+                        "operadores": {"NOVO:01": {"nome": "Ana", "ativo": True}}})
+    assert ctrl.operador == {"uid": "NOVO:01", "nome": "Ana"}
+
+
+def test_chaveiro_novo_que_continua_desconhecido(ctrl, esp):
+    ctrl.tratar_evento({"t": "status", "wifi": True})
+    ctrl.identificar("NOVO:02")
+    ctrl.tratar_evento({"t": "sync", "ok": True, "operadores": {}, "produtos": {}, "pedidos": {}})
+    assert ctrl.operador is None
+    assert esp.de_tipo("enviar")[0]["path"] == "rfid_desconhecidos/NOVO:02"
+
+
 def test_inventario_registra_e_substitui_estoque(ctrl, esp, dados):
     ctrl.identificar(UID_RODRIGO)
     c = contar_pecas(1040, 10.4)

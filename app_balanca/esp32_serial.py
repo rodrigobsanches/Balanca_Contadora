@@ -55,9 +55,11 @@ class LigacaoESP32:
     Atencao: os callbacks rodam na thread da serial, nao na thread da tela.
     """
 
-    def __init__(self, ao_evento, ao_conexao=None, porta_config="auto"):
+    def __init__(self, ao_evento, ao_conexao=None, porta_config="auto", ao_texto=None):
         self.ao_evento = ao_evento
         self.ao_conexao = ao_conexao or (lambda conectado, porta: None)
+        # ao_texto(linha): linhas que NAO sao eventos (boot, ">>>", erros). Util para depurar.
+        self.ao_texto = ao_texto or (lambda linha: None)
         self.porta_config = porta_config
         self.porta = None
         self._serial = None
@@ -89,6 +91,23 @@ class LigacaoESP32:
         try:
             with self._trava_escrita:
                 s.write(dados)
+            return True
+        except (serial.SerialException, OSError):
+            self._fechar()
+            return False
+
+    def reiniciar_programa(self):
+        """Faz a ESP32 (re)comecar o main.py: Ctrl+C interrompe o que estiver rodando
+        e Ctrl+D faz o 'soft reboot', que roda o main.py de novo.
+        Serve para quando a placa ficou parada no prompt >>> (ex.: depois do Thonny)."""
+        s = self._serial
+        if s is None:
+            return False
+        try:
+            with self._trava_escrita:
+                s.write(b"\r\x03\x03")
+                time.sleep(0.2)
+                s.write(b"\x04")
             return True
         except (serial.SerialException, OSError):
             self._fechar()
@@ -140,8 +159,12 @@ class LigacaoESP32:
                 continue
             if not bruto:
                 continue
-            evento = interpretar_linha(bruto.decode("utf-8", errors="replace"))
-            if evento is not None:
+            texto = bruto.decode("utf-8", errors="replace")
+            evento = interpretar_linha(texto)
+            if evento is None:
+                if texto.strip():
+                    self.ao_texto(texto.rstrip())
+            else:
                 try:
                     self.ao_evento(evento)
                 except Exception as erro:  # um erro no app nao pode matar a leitura
