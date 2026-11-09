@@ -1,0 +1,184 @@
+"""Testes da Fase 3a: dados locais, ligacao serial (partes sem hardware) e controlador."""
+import os
+import sys
+from types import SimpleNamespace
+
+import pytest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from contagem import contar_pecas  # noqa: E402
+from controlador import Controlador  # noqa: E402
+from dados_locais import DadosLocais  # noqa: E402
+from esp32_serial import escolher_porta, interpretar_linha  # noqa: E402
+
+UID_RODRIGO = "36:BD:9A:AC"
+
+
+# ---------------- apoio ----------------
+@pytest.fixture
+def dados(tmp_path):
+    d = DadosLocais(str(tmp_path / "teste.db"))
+    d.salvar_cadastros("operadores", {UID_RODRIGO: {"nome": "Rodrigo", "ativo": True},
+                                      "AA:BB": {"nome": "Inativo", "ativo": False}})
+    d.salvar_cadastros("produtos", {"P001": {"nome": "Parafuso", "peso_unit_g": 10.4,
+                                             "estoque_atual": 50, "estoque_minimo": 10}})
+    d.salvar_cadastros("pedidos", {"PED001": {"status": "pendente", "itens": {"P001": {"qtd": 10}}},
+                                   "PED002": {"status": "conferido", "itens": {}}})
+    yield d
+    d.fechar()
+
+
+class EspFalsa:
+    """Faz o papel da ESP32: guarda os comandos recebidos."""
+    def __init__(self, conectada=True):
+        self.conectada = conectada
+        self.comandos = []
+
+    def __call__(self, comando):
+        if not self.conectada:
+            return False
+        self.comandos.append(comando)
+        return True
+
+    def de_tipo(self, c):
+        return [x for x in self.comandos if x["c"] == c]
+
+
+@pytest.fixture
+def esp():
+    return EspFalsa()
+
+
+@pytest.fixture
+def ctrl(dados, esp):
+    avisos = []
+    contador = iter(range(1, 1000))
+    c = Controlador({"id_balanca": "BAL-01"}, dados, esp,
+                    avisar=lambda tipo, info: avisos.append((tipo, info)),
+                    gerar_id=lambda: "id-%d" % next(contador),
+                    relogio=lambda: "2026-11-15T14:32:05")
+    c.avisos = avisos
+    return c
+
+
+# ---------------- serial ----------------
+def test_escolher_porta_prefere_usb_nativa():
+    portas = [SimpleNamespace(device="COM3", vid=0x8086),
+              SimpleNamespace(device="COM7", vid=0x1A86),
+              SimpleNamespace(device="COM5", vid=0x303A)]
+    assert escolher_porta(portas) == "COM5"
+    assert escolher_porta(portas[:2]) == "COM7"
+    assert escolher_porta(portas[:1]) is None
+    assert escolher_porta(portas, "COM9") == "COM9"
+
+
+def test_interpretar_linha():
+    assert interpretar_linha('{"t":"rfid","uid":"X"}\r\n') == {"t": "rfid", "uid": "X"}
+    assert interpretar_linha("MPY: soft reboot") is None
+    assert interpretar_linha('{"c":"ping"}') is None   # eco de comando, nao e evento
+    assert interpretar_linha("{quebrado") is None
+
+
+# ---------------- dados locais ----------------
+def test_registro_muda_de_estado(dados):
+    dados.novo_registro("r1", "put", "contagens/r1", {"a": 1})
+    assert [r["id"] for r in dados.pendentes()] == ["r1"]
+    dados.marcar("r1", "enviado")
+    assert dados.pendentes() == []
+    assert dados.contar_por_status() == {"enviado": 1}
+
+
+def test_atualizar_cadastro_local(dados):
+    dados.atualizar_cadastro("produtos", "P001", {"estoque_atual": 7})
+    assert dados.cadastro("produtos", "P001")["estoque_atual"] == 7
+    assert dados.cadastro("produtos", "P001")["nome"] == "Parafuso"
+
+
+# ---------------- controlador ----------------
+def test_conectar_pede_sync_e_reenvia_pendentes(ctrl, esp, dados):
+    dados.novo_registro("velho", "put", "contagens/velho", {"id": "velho"})
+    ctrl.ao_conexao(True, "COM5")
+    assert esp.comandos[0] == {"c": "sync"}
+    assert esp.de_tipo("enviar")[0]["id"] == "velho"
+
+
+def test_sync_guarda_cadastros(ctrl, dados):
+    ctrl.tratar_evento({"t": "sync", "ok": True, "operadores": {"X": {"nome": "Ana"}},
+                        "produtos": {}, "pedidos": {}})
+    assert dados.cadastros("operadores") == {"X": {"nome": "Ana"}}
+    assert ("cadastros", None) in ctrl.avisos
+
+
+def test_sync_falho_mantem_cadastros(ctrl, dados):
+    ctrl.tratar_evento({"t": "sync", "ok": False, "erro": "sem wifi"})
+    assert UID_RODRIGO in dados.cadastros("operadores")
+
+
+def test_chaveiro_cadastrado_faz_login(ctrl, esp):
+    ctrl.tratar_evento({"t": "rfid", "uid": UID_RODRIGO})
+    assert ctrl.operador == {"uid": UID_RODRIGO, "nome": "Rodrigo"}
+    assert {"c": "sinal", "estado": "ok"} in esp.comandos
+
+
+def test_chaveiro_desconhecido_e_bloqueado_e_registrado(ctrl, esp):
+    assert not ctrl.identificar("99:99")
+    assert not ctrl.identificar("AA:BB")       # cadastrado mas inativo
+    assert ctrl.operador is None
+    enviados = esp.de_tipo("enviar")
+    assert enviados[0]["path"] == "rfid_desconhecidos/99:99"
+    assert {"c": "sinal", "estado": "erro"} in esp.comandos
+
+
+def test_inventario_registra_e_substitui_estoque(ctrl, esp, dados):
+    ctrl.identificar(UID_RODRIGO)
+    c = contar_pecas(1040, 10.4)
+    reg = ctrl.confirmar_inventario("P001", c, 1040, 0, 10.4, "amostra")
+    assert reg["quantidade"] == 100 and reg["modo"] == "inventario"
+    assert reg["operador_nome"] == "Rodrigo" and reg["produto_nome"] == "Parafuso"
+    put = esp.de_tipo("enviar")[-1]
+    assert put["path"] == "contagens/" + reg["id"] and put["dados"]["id"] == reg["id"]
+    patch = esp.de_tipo("atualizar")[-1]
+    assert patch["path"] == "produtos/P001" and patch["dados"] == {"estoque_atual": 100}
+    assert dados.cadastro("produtos", "P001")["estoque_atual"] == 100
+
+
+def test_ack_atualiza_registro(ctrl, dados):
+    ctrl.identificar(UID_RODRIGO)
+    reg = ctrl.confirmar_inventario("P001", contar_pecas(104, 10.4), 104, 0, 10.4)
+    ctrl.tratar_evento({"t": "ack", "id": reg["id"], "ok": False, "fila": True})
+    assert dados.registro(reg["id"])["status"] == "fila"
+    ctrl.tratar_evento({"t": "ack", "id": reg["id"], "ok": True, "da_fila": True})
+    assert dados.registro(reg["id"])["status"] == "enviado"
+
+
+def test_sem_esp32_fica_pendente(dados):
+    esp = EspFalsa(conectada=False)
+    c = Controlador({}, dados, esp)
+    c.identificar(UID_RODRIGO)
+    c.confirmar_inventario("P001", contar_pecas(104, 10.4), 104, 0, 10.4)
+    assert len(dados.pendentes()) == 2   # contagem + estoque
+
+
+def test_pedidos_pendentes(ctrl):
+    assert list(ctrl.pedidos_pendentes()) == ["PED001"]
+
+
+def test_conferencia_ok_desconta_estoque_e_libera_pedido(ctrl, esp, dados):
+    ctrl.identificar(UID_RODRIGO)
+    reg, res = ctrl.conferir_item("PED001", "P001", contar_pecas(104, 10.4), 10, 104, 0, 10.4)
+    assert res.resultado == "OK" and reg["pedido_id"] == "PED001"
+    assert ctrl.finalizar_conferencia("PED001", [reg])
+    assert dados.cadastro("produtos", "P001")["estoque_atual"] == 40   # 50 - 10
+    assert dados.cadastro("pedidos", "PED001")["status"] == "conferido"
+    pedido = [x for x in esp.de_tipo("atualizar") if x["path"] == "pedidos/PED001"][0]
+    assert pedido["dados"]["status"] == "conferido"
+
+
+def test_conferencia_com_falta_nao_libera(ctrl, dados):
+    ctrl.identificar(UID_RODRIGO)
+    reg, res = ctrl.conferir_item("PED001", "P001", contar_pecas(83.2, 10.4), 10, 83.2, 0, 10.4)
+    assert res.resultado == "FALTA" and res.diferenca == -2
+    assert not ctrl.finalizar_conferencia("PED001", [reg])
+    assert dados.cadastro("produtos", "P001")["estoque_atual"] == 50
+    assert dados.cadastro("pedidos", "PED001")["status"] == "pendente"
