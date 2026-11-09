@@ -129,6 +129,11 @@ def tratar_comando(cmd):
         sincronizar()
     elif c == "status":
         status_serial()
+    elif c == "wifi":
+        # {"c":"wifi","ligado":false} derruba o Wi-Fi de proposito (teste da fila / demo)
+        ligado = cmd.get("ligado", True)
+        rede.pausar(not ligado)
+        log("Wi-Fi %s pelo comando" % ("religado" if ligado else "desligado"))
     elif c == "invalido":
         log("linha ignorada (nao e um comando JSON): %s" % cmd.get("linha"))
     else:
@@ -176,7 +181,7 @@ def status_firebase():
             "ultimo_contato": {".sv": "timestamp"},  # hora do servidor do Firebase
             "fila": fila.tamanho,
             "rssi": rede.rssi(),
-            "rede": rede.nome_atual(),
+            # o nome da rede NAO vai para a nuvem: o dashboard e mostrado ao publico
             "fw": VERSAO_FW,
         })
     except Exception as e:
