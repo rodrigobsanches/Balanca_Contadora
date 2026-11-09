@@ -2,18 +2,23 @@
 # Copie este arquivo para "config.py" e preencha com os seus dados.
 # O config.py NAO vai para o GitHub (esta no .gitignore).
 
-# --- Wi-Fi (roteador do celular na feira) ---
-WIFI_SSID = "nome-da-rede"
-WIFI_SENHA = "senha-da-rede"
+# --- Wi-Fi: lista de redes, na ordem de preferencia ---
+# A placa tenta uma de cada vez ate conectar. Ex.: a de casa e o roteador do celular.
+WIFI_REDES = [
+    ("nome-da-rede-de-casa", "senha-da-rede-de-casa"),
+    ("nome-do-roteador-do-celular", "senha-do-celular"),
+]
+WIFI_TEMPO_TENTATIVA_S = 15   # tempo maximo tentando cada rede
 
 # --- Firebase (Configuracoes do projeto no console do Firebase) ---
 FIREBASE_API_KEY = "cole-aqui-a-chave-de-api-da-web"
-FIREBASE_DB_URL = "https://SEU-PROJETO-default-rtdb.firebaseio.com"
-FIREBASE_EMAIL = "esp32-01@balanca.local"   # usuario criado no Firebase Authentication
+FIREBASE_DB_URL = "https://SEU-PROJETO-default-rtdb.firebaseio.com"   # sem "/" no final
+FIREBASE_EMAIL = "esp32@balanca.local"   # usuario criado no Firebase Authentication
 FIREBASE_SENHA = "senha-do-usuario-da-esp32"
 
 # --- Identificacao ---
 ID_DISPOSITIVO = "esp32-01"
+INTERVALO_STATUS_S = 60   # de quanto em quanto tempo atualiza dispositivos/<id> no Firebase
 
 # --- Hardware ---
 PINO_RGB = 48          # LED RGB da placa (em alguns clones e o 38)

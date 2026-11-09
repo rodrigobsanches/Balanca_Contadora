@@ -1,6 +1,20 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null"
+    ".read": "auth != null && auth.uid === 'PeKuyGXgtaX6i3Fr9SVKE8E5aNr2'",
+    ".write": "auth != null && auth.uid === 'PeKuyGXgtaX6i3Fr9SVKE8E5aNr2'",
+    "contagens": {
+      "$id": {
+        ".validate": "newData.hasChildren(['id', 'balanca', 'modo', 'quantidade', 'resultado']) && newData.child('id').val() === $id",
+        "quantidade": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "modo": { ".validate": "newData.val() === 'inventario' || newData.val() === 'conferencia'" },
+        "resultado": { ".validate": "newData.val() === 'OK' || newData.val() === 'FALTA' || newData.val() === 'SOBRA'" }
+      }
+    },
+    "produtos": {
+      "$codigo": {
+        "estoque_atual": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "peso_unit_g": { ".validate": "newData.isNumber() && newData.val() > 0" }
+      }
+    }
   }
 }

@@ -47,9 +47,9 @@ Balança comercial (PC embarcado)  ── USB ──  ESP32-S3 (MicroPython)  �
 Cada pasta terá o seu passo a passo. Por enquanto:
 
 ```bash
-# testes da lógica de contagem (no PC)
+# testes no PC: lógica de contagem e partes do firmware que não dependem do hardware
 pip install -r app_balanca/requirements.txt
-pytest app_balanca/tests
+pytest app_balanca/tests esp32/tests_pc
 ```
 
 O app da balança roda em **modo simulado** quando não há balança conectada, então dá para
