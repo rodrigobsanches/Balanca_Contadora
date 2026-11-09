@@ -21,24 +21,16 @@ import sys
 PASTA = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PASTA)
 
+from config_app import caminho_dados, carregar_config  # noqa: E402
 from contagem import contar_pecas  # noqa: E402
 from controlador import Controlador  # noqa: E402
 from dados_locais import DadosLocais  # noqa: E402
 from esp32_serial import LigacaoESP32  # noqa: E402
 
 
-def carregar_config():
-    for nome in ("config.json", "config_exemplo.json"):
-        caminho = os.path.join(PASTA, nome)
-        if os.path.exists(caminho):
-            with open(caminho, encoding="utf-8") as f:
-                return json.load(f)
-    return {}
-
-
 def main():
     config = carregar_config()
-    dados = DadosLocais(os.path.join(PASTA, config.get("arquivo_dados", "dados_locais.db")))
+    dados = DadosLocais(caminho_dados(config))
 
     def avisar(tipo, info):
         print("  [app] %-12s %s" % (tipo, info if info is not None else ""))
