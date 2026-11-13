@@ -5,7 +5,7 @@ adaptador privado balanca_privada/impressao.py (fora do GitHub). Sem ele, o app 
 a previa da etiqueta na tela.
 
 A etiqueta chega como um dicionario (ver Controlador.dados_etiqueta):
-    titulo, pedido_id, destino, itens [{produto, nome, quantidade}], peso_total_g,
+    titulo, pedido_id, destino, endereco, itens [{produto, nome, quantidade}], peso_bruto_g, peso_liquido_g,
     operador, data_hora (ISO), qr (texto do QR code), balanca
 """
 
