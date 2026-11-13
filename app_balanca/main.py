@@ -13,6 +13,25 @@ import sys
 PASTA = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PASTA)
 
+
+def log_em_arquivo_sem_console(pasta_logs=os.path.join(PASTA, "logs"), limite_bytes=1_000_000):
+    """Com pythonw.exe (sem janela preta, como na balanca) nao existe console e as mensagens
+    se perderiam. Nesse caso, print e erros vao para logs/app.log (o anterior vira app.log.1)."""
+    if sys.stdout is not None:
+        return None
+    from datetime import datetime
+    os.makedirs(pasta_logs, exist_ok=True)
+    arquivo = os.path.join(pasta_logs, "app.log")
+    if os.path.exists(arquivo) and os.path.getsize(arquivo) > limite_bytes:
+        os.replace(arquivo, arquivo + ".1")
+    saida = open(arquivo, "a", encoding="utf-8", buffering=1)   # 1 = grava a cada linha
+    sys.stdout = sys.stderr = saida
+    print("\n=== app iniciado em %s ===" % datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+    return arquivo
+
+
+log_em_arquivo_sem_console()
+
 from PySide6.QtCore import QObject, Signal  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
