@@ -60,6 +60,13 @@ def produtos():
 
 
 # ---------------- operadores ----------------
+def _proximo_numero(cadastrados):
+    """Menor numero de 1 a 99 ainda nao usado (vai para o display da balanca)."""
+    usados = {int(op["numero"]) for op in cadastrados.values()
+              if str(op.get("numero", "")).isdigit()}
+    return next((n for n in range(1, 100) if n not in usados), 0)
+
+
 def operadores():
     cadastrados = fb.ler("operadores")
     desconhecidos = fb.ler("rfid_desconhecidos")
@@ -68,28 +75,39 @@ def operadores():
     if not desconhecidos:
         st.caption("Nenhum. Encoste um chaveiro novo na balança: ele aparece aqui.")
     for uid in sorted(desconhecidos):
-        c1, c2, c3 = st.columns([2, 3, 1])
+        c1, c2, c3, c4 = st.columns([2, 3, 1, 1])
         c1.code(uid)
         nome = c2.text_input("Nome", key="nome_" + uid, label_visibility="collapsed",
                              placeholder="Nome do operador")
-        if c3.button("Cadastrar", key="cad_" + uid, use_container_width=True):
+        numero = c3.number_input("Número", 0, 99, _proximo_numero(cadastrados), key="num_" + uid,
+                                 label_visibility="collapsed", help="Aparece no display da balança")
+        if c4.button("Cadastrar", key="cad_" + uid, use_container_width=True):
             if not nome.strip():
                 st.error("Digite o nome.")
             else:
-                fb.gravar("operadores/" + uid, {"nome": nome.strip(), "ativo": True})
+                fb.gravar("operadores/" + uid, {"nome": nome.strip(), "ativo": True,
+                                                "numero": int(numero)})
                 fb.apagar("rfid_desconhecidos/" + uid)
-                _aviso_ok("%s cadastrado" % nome.strip())
+                _aviso_ok("%s cadastrado (nº %d)" % (nome.strip(), numero))
                 st.rerun()
 
     st.subheader("Operadores")
+    st.caption("O número (0 a 99) aparece no display da balança enquanto a pessoa está logada.")
     if not cadastrados:
         st.caption("Nenhum operador.")
     for uid, op in sorted(cadastrados.items(), key=lambda x: x[1].get("nome", "")):
-        c1, c2, c3 = st.columns([3, 2, 1])
+        c1, c2, c3, c4, c5 = st.columns([3, 2, 1, 1, 1])
         c1.write("**%s**" % op.get("nome", uid))
         c2.code(uid)
+        atual = int(op["numero"]) if str(op.get("numero", "")).isdigit() else 0
+        numero = c3.number_input("Número", 0, 99, atual, key="numop_" + uid,
+                                 label_visibility="collapsed")
+        if c4.button("Salvar nº", key="salvnum_" + uid, use_container_width=True,
+                     disabled=numero == atual and "numero" in op):
+            fb.atualizar("operadores/" + uid, {"numero": int(numero)})
+            st.rerun()
         ativo = op.get("ativo", True) not in (False, "false")
-        if c3.button("Desativar" if ativo else "Ativar", key="atv_" + uid, use_container_width=True):
+        if c5.button("Desativar" if ativo else "Ativar", key="atv_" + uid, use_container_width=True):
             fb.atualizar("operadores/" + uid, {"ativo": not ativo})
             st.rerun()
 

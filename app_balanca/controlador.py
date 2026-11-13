@@ -49,6 +49,7 @@ class Controlador:
     def ao_ficar_pronta(self):
         """ESP32 conectou ou reiniciou: pede os cadastros e reenvia o que ficou pendente."""
         self.enviar_esp32({"c": "sync"})
+        self.mostrar_no_display()
         self.reenviar_pendentes()
 
     def tratar_evento(self, ev):
@@ -126,11 +127,14 @@ class Controlador:
     def _identificar_com_cadastro_atual(self, uid):
         operador = self._operador_valido(uid)
         if operador:
-            self.operador = {"uid": uid, "nome": operador.get("nome", uid)}
+            self.operador = {"uid": uid, "nome": operador.get("nome", uid),
+                             "numero": operador.get("numero")}
             self.sinal("ok")
+            self.mostrar_no_display()
             self.avisar("login", self.operador)
             return True
         self.sinal("erro")
+        self.enviar_esp32({"c": "display", "valor": "E", "segundos": 3})
         self._operacao("put", "rfid_desconhecidos/" + uid,
                        {"uid": uid, "visto_em": SERVIDOR_AGORA, "balanca": self.id_balanca})
         self.avisar("desconhecido", {"uid": uid})
@@ -139,7 +143,17 @@ class Controlador:
     def sair(self):
         self.operador = None
         self.sinal("ocioso")
+        self.mostrar_no_display()
         self.avisar("logout", None)
+
+    def mostrar_no_display(self):
+        """Display de 2 digitos da ESP32: numero do operador logado (0 a 99) ou '--'."""
+        numero = (self.operador or {}).get("numero")
+        try:
+            valor = int(numero) if numero is not None and 0 <= int(numero) <= 99 else "--"
+        except (TypeError, ValueError):
+            valor = "--"
+        self.enviar_esp32({"c": "display", "valor": valor})
 
     def sinal(self, estado):
         self.enviar_esp32({"c": "sinal", "estado": estado})

@@ -79,3 +79,26 @@ def test_caminhos_do_firebase():
     assert not caminho_valido("outra_pasta/x")
     assert not caminho_valido("contagens/x.json?auth=1")
     assert not caminho_valido(None)
+
+
+def test_display_texto_e_segmentos():
+    from display7 import Digito, texto_para_dois
+
+    assert texto_para_dois(12) == "12" and texto_para_dois(7) == " 7"
+    assert texto_para_dois(150) == "--" and texto_para_dois("--") == "--"
+    assert texto_para_dois("E") == " E" and texto_para_dois("x") == " -"
+
+    class PinoFalso:
+        def __init__(self, numero):
+            self.v = None
+
+        def value(self, v):
+            self.v = v
+
+    pinos = {s: i for i, s in enumerate("abcdefg")}
+    catodo = Digito(pinos, True, PinoFalso)
+    catodo.mostrar("1")                                  # so b e c acesos
+    assert [catodo.pinos[s].v for s in "abcdefg"] == [0, 1, 1, 0, 0, 0, 0]
+    anodo = Digito(pinos, False, PinoFalso)
+    anodo.mostrar("1")                                   # anodo comum: aceso = 0
+    assert [anodo.pinos[s].v for s in "abcdefg"] == [1, 0, 0, 1, 1, 1, 1]

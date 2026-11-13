@@ -145,7 +145,7 @@ def test_sync_falho_mantem_cadastros(ctrl, dados):
 
 def test_chaveiro_cadastrado_faz_login(ctrl, esp):
     ctrl.tratar_evento({"t": "rfid", "uid": UID_RODRIGO})
-    assert ctrl.operador == {"uid": UID_RODRIGO, "nome": "Rodrigo"}
+    assert (ctrl.operador["uid"], ctrl.operador["nome"]) == (UID_RODRIGO, "Rodrigo")
     assert {"c": "sinal", "estado": "ok"} in esp.comandos
 
 
@@ -173,7 +173,7 @@ def test_chaveiro_novo_confere_na_nuvem_antes_de_recusar(ctrl, esp, dados):
     assert esp.de_tipo("enviar") == []                      # nao registrou como desconhecido
     ctrl.tratar_evento({"t": "sync", "ok": True, "produtos": {}, "pedidos": {},
                         "operadores": {"NOVO:01": {"nome": "Ana", "ativo": True}}})
-    assert ctrl.operador == {"uid": "NOVO:01", "nome": "Ana"}
+    assert (ctrl.operador["uid"], ctrl.operador["nome"]) == ("NOVO:01", "Ana")
 
 
 def test_chaveiro_novo_que_continua_desconhecido(ctrl, esp):
@@ -242,3 +242,17 @@ def test_qr_vira_link_do_dashboard(dados, esp):
     c = Controlador({"url_dashboard": "https://exemplo.streamlit.app/"}, dados, esp)
     assert c.conteudo_qr("PED001") == "https://exemplo.streamlit.app/?pedido=PED001"
     assert Controlador({}, dados, esp).conteudo_qr("PED001") == "PED001"
+
+
+def test_display_mostra_numero_do_operador(dados, esp):
+    dados.salvar_cadastros("operadores", {"AA:01": {"nome": "Ana", "ativo": True, "numero": 7},
+                                          "AA:02": {"nome": "Bia", "ativo": True}})
+    c = Controlador({}, dados, esp)
+    c.identificar("AA:01")
+    assert esp.de_tipo("display")[-1] == {"c": "display", "valor": 7}
+    c.identificar("AA:02")                                   # sem numero cadastrado
+    assert esp.de_tipo("display")[-1]["valor"] == "--"
+    c.identificar("ZZ:99")                                   # desconhecido (sem wifi: decide na hora)
+    assert esp.de_tipo("display")[-1] == {"c": "display", "valor": "E", "segundos": 3}
+    c.sair()
+    assert esp.de_tipo("display")[-1]["valor"] == "--"
