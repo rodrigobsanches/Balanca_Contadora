@@ -9,8 +9,9 @@
 
 | Comando | Exemplo | O que a ESP32 faz |
 |---|---|---|
-| `ping` | `{"c":"ping"}` | responde `{"t":"pong","fw":"0.3"}` |
+| `ping` | `{"c":"ping"}` | responde `{"t":"pong","fw":"0.4"}` |
 | `status` | `{"c":"status"}` | responde com o evento `status` na hora |
+| `display` | `{"c":"display","valor":12}` / `{"c":"display","valor":"E","segundos":3}` | mostra no display de 2 dígitos: número 0–99, `--` ou `E`; com `segundos`, mostra por um tempo e volta ao anterior |
 | `wifi` | `{"c":"wifi","ligado":false}` | desliga (ou religa, com `true`) o Wi-Fi de propósito, para testar e demonstrar a fila offline |
 | `sinal` | `{"c":"sinal","estado":"ok"}` | LED e buzzer: `ocioso`, `aguardando`, `ok`, `erro`, `atencao` |
 | `enviar` | `{"c":"enviar","id":"<uuid>","path":"contagens/<uuid>","dados":{...}}` | **PUT** no Firebase; se falhar, guarda na fila offline |

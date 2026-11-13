@@ -15,8 +15,9 @@ from presenca import Presenca
 from rede import Rede
 from serial_app import SerialApp, enviar
 from sinalizacao import Sinalizacao, PADROES
+from display7 import criar_display
 
-VERSAO_FW = "0.3"
+VERSAO_FW = "0.4"
 
 
 def ajuste(nome, padrao):
@@ -44,6 +45,12 @@ presenca = Presenca(config.PINO_TRIG, config.PINO_ECHO,
                     config.DISTANCIA_PERTO_CM, config.DISTANCIA_LONGE_CM,
                     config.TEMPO_CHEGOU_MS, config.TEMPO_SAIU_MS,
                     intervalo_ms=PRESENCA_INTERVALO_MS)
+
+try:
+    display = criar_display(config)      # None se o config nao tiver display
+except Exception as e:
+    display = None
+    log("display nao iniciou: %s" % e)
 
 i2c = I2C(0, sda=Pin(config.PINO_SDA), scl=Pin(config.PINO_SCL), freq=100000)
 time.sleep_ms(500)
@@ -141,6 +148,14 @@ def tratar_comando(cmd):
         sincronizar()
     elif c == "status":
         status_serial()
+    elif c == "display":
+        # {"c":"display","valor":12}  /  {"c":"display","valor":"E","segundos":3}
+        if display is None:
+            log("sem display configurado")
+        elif cmd.get("segundos"):
+            display.mostrar_por(cmd.get("valor", "--"), float(cmd["segundos"]) * 1000)
+        else:
+            display.mostrar(cmd.get("valor", "--"))
     elif c == "wifi":
         # {"c":"wifi","ligado":false} derruba o Wi-Fi de proposito (teste da fila / demo)
         ligado = cmd.get("ligado", True)
@@ -210,6 +225,8 @@ ultimo_uid_ms = 0
 
 while True:
     sinal.atualizar()
+    if display:
+        display.atualizar()
 
     mudou = presenca.atualizar()
     if mudou is not None:
