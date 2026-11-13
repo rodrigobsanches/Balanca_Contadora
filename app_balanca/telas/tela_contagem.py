@@ -168,4 +168,4 @@ class TelaContagem(QWidget):
         self.janela.finalizar_pesagem(
             "Registrado!", "%s peças de %s" % (formatar_numero(c.quantidade),
                                                self.produto.get("nome", self.codigo)),
-            "sucesso", depois=self.janela.abrir_inventario)
+            "sucesso", depois=self.janela.abrir_inventario, frase="contagem_registrada")

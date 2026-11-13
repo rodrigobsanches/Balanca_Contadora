@@ -23,6 +23,7 @@ from telas.tela_pedido import TelaPedido
 from telas.tela_pedidos import TelaPedidos
 from telas.tela_produtos import TelaProdutos
 from telas.tela_retirar import TelaRetirar
+from voz import Voz
 
 LARGURA, ALTURA = 1366, 768
 INTERVALO_BALANCA_MS = 200
@@ -79,6 +80,7 @@ class JanelaPrincipal(QWidget):
         self.ctrl = ctrl
         self.balanca = balanca
         self.impressora = impressora       # None = so previa da etiqueta
+        self.voz = Voz(config)             # frases gravadas; "voz": false no config = silencio
         self.setWindowTitle("Balança contadora de peças")
         self.setStyleSheet(QSS)
         self.alguem_perto = False
@@ -198,13 +200,17 @@ class JanelaPrincipal(QWidget):
             texto = "%s: confere" % registro.get("produto_nome", codigo)
         else:
             texto = "%s: %s" % (registro.get("produto_nome", codigo), resultado.mensagem)
-        self.finalizar_pesagem("Item registrado", texto,
-                               "sucesso" if resultado.resultado == "OK" else "erro",
-                               depois=lambda: self.ir(self.pedido))
+        ok = resultado.resultado == "OK"
+        self.finalizar_pesagem("Item registrado", texto, "sucesso" if ok else "erro",
+                               depois=lambda: self.ir(self.pedido),
+                               frase="item_conferido" if ok else "divergente")
 
-    def finalizar_pesagem(self, titulo, texto, tipo="sucesso", depois=None):
+    def finalizar_pesagem(self, titulo, texto, tipo="sucesso", depois=None, frase=None):
         """Depois de toda pesagem confirmada: tira a tara da balanca e pede para retirar
-        tudo do prato. So segue (depois) quando o prato estiver vazio."""
+        tudo do prato. So segue (depois) quando o prato estiver vazio.
+        frase: chave da voz (voz.FRASES) falada junto."""
+        if frase:
+            self.voz.falar(frase)
         if not self.balanca.limpar_tara():
             print("ATENCAO: nao consegui tirar a tara da balanca")
         self.retirar.abrir(titulo, texto, tipo, depois or self.ir_menu)
@@ -237,19 +243,24 @@ class JanelaPrincipal(QWidget):
             self.menu.definir_operador(info["nome"])
             # o mesmo chaveiro de novo no meio de uma contagem nao interrompe nada
             if novo or self.pilha.currentWidget() is self.descanso:
+                self.voz.falar("bem_vindo")
                 self.ir(self.menu)
         elif tipo == "logout":
             self._uid_logado = None
+            self.voz.falar("ate_logo")
             self.ir(self.descanso)
         elif tipo == "verificando":
             self.descanso.mostrar_mensagem("Verificando chaveiro...", "info")
         elif tipo == "desconhecido":
+            self.voz.falar("nao_cadastrado")
             self.descanso.mostrar_mensagem(
                 "Chaveiro não cadastrado (%s).\nPeça o cadastro ao responsável." % info["uid"], "erro", 6)
         elif tipo == "presenca":
             self.alguem_perto = info["perto"]
             if self.alguem_perto:
                 self._ultima_atividade = time.monotonic()
+                if not self.ctrl.operador:
+                    self.voz.falar("aproxime")
             self.descanso.definir_presenca(self.alguem_perto)
         elif tipo == "cadastros":
             if self.pilha.currentWidget() is self.produtos:
