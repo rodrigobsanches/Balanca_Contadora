@@ -101,10 +101,12 @@ class TelaPedido(QWidget):
         registros = [self.registros[c] for c in sorted(self.itens())]
         ctrl = self.janela.ctrl
         if ctrl.finalizar_conferencia(self.pedido_id, registros):
+            self.janela.voz.falar("pedido_conferido")
             self.janela.abrir_etiqueta(ctrl.dados_etiqueta(self.pedido_id, registros))
             return
         problemas = ["%s: %s" % (c, r.mensagem) for c, r in sorted(self.resultados.items())
                      if r.resultado != "OK"]
+        self.janela.voz.falar("pedido_divergente")
         self.janela.mostrar_mensagem(
             "Divergência no pedido %s" % self.pedido_id,
             "\n".join(problemas) + "\nO pedido continua pendente. Reconte ou separe as peças.",
