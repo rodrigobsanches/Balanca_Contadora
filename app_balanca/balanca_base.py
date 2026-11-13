@@ -28,6 +28,16 @@ class Balanca:
         """Tara atual em gramas (vai no registro da contagem). Padrao: 0."""
         return 0.0
 
+    def limpar_tara(self):
+        """Tira a tara (volta para "sem tara"). Chamado depois de toda pesagem confirmada,
+        para a proxima comecar sem tara esquecida. Devolve True se deu certo."""
+        return True
+
+    def altura_visor_px(self):
+        """Altura da janela de peso da propria balanca no topo da tela (o app fica
+        logo abaixo dela). None = usar faixa_reservada_topo_px do config."""
+        return None
+
     def tarar(self):
         """Faz a tara com o que esta no prato. Devolve True se deu certo."""
         raise NotImplementedError

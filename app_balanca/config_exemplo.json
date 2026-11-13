@@ -11,5 +11,6 @@
   "voz": false,
   "imprimir_etiqueta": false,
   "layout_etiqueta": "layouts/etiqueta_conferido.xml",
-  "url_dashboard": ""
+  "url_dashboard": "",
+  "prato_vazio_g": 2
 }

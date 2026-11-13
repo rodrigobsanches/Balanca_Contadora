@@ -68,9 +68,16 @@ def test_fluxo_inventario(app, sistema):
     assert janela.contagem.quantidade.text() == "100"
     assert janela.contagem.botao_confirmar.isEnabled()
 
+    balanca.tarar()                                   # operador deixou uma tara
     janela.contagem.confirmar()
     app.processEvents()
-    assert janela.pilha.currentWidget() is janela.mensagem
+    # depois de confirmar: tara tirada sozinha e pede para esvaziar o prato
+    assert janela.pilha.currentWidget() is janela.retirar
+    assert balanca.tara_g() == 0
+    colocar_peso(app, balanca, janela, 500)           # ainda tem peca no prato: nao sai
+    assert janela.pilha.currentWidget() is janela.retirar
+    colocar_peso(app, balanca, janela, 0)             # prato vazio: volta aos produtos
+    assert janela.pilha.currentWidget() is janela.produtos
     assert ctrl.dados.cadastro("produtos", "P001")["estoque_atual"] == 100
     assert any(c.get("path", "").startswith("contagens/") for c in enviados)
 
@@ -117,6 +124,8 @@ def conferir_item(app, balanca, janela, codigo, esperada, gramas):
     colocar_peso(app, balanca, janela, gramas)
     janela.contagem.confirmar()
     app.processEvents()
+    assert janela.pilha.currentWidget() is janela.retirar
+    colocar_peso(app, balanca, janela, 0)             # retira as pecas
 
 
 def test_conferencia_ok_gera_etiqueta(app, sistema):

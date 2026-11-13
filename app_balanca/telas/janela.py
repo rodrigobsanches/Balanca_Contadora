@@ -22,6 +22,7 @@ from telas.tela_mensagem import TelaMensagem
 from telas.tela_pedido import TelaPedido
 from telas.tela_pedidos import TelaPedidos
 from telas.tela_produtos import TelaProdutos
+from telas.tela_retirar import TelaRetirar
 
 LARGURA, ALTURA = 1366, 768
 INTERVALO_BALANCA_MS = 200
@@ -85,7 +86,7 @@ class JanelaPrincipal(QWidget):
         self._uid_logado = None
 
         # --- topo: visor simulado ou faixa livre para o visor da balanca real ---
-        faixa = int(config.get("faixa_reservada_topo_px", 150))
+        faixa = self.faixa_topo()
         self.tela_cheia = bool(config.get("tela_cheia", False))
         self.visor = None
         layout = QVBoxLayout(self)
@@ -111,8 +112,9 @@ class JanelaPrincipal(QWidget):
         self.pedidos = TelaPedidos(self)
         self.pedido = TelaPedido(self)
         self.etiqueta = TelaEtiqueta(self)
+        self.retirar = TelaRetirar(self)
         for t in (self.descanso, self.menu, self.produtos, self.contagem, self.amostra,
-                  self.mensagem, self.pedidos, self.pedido, self.etiqueta):
+                  self.mensagem, self.pedidos, self.pedido, self.etiqueta, self.retirar):
             self.pilha.addWidget(t)
         layout.addWidget(self.pilha, 1)
 
@@ -126,11 +128,16 @@ class JanelaPrincipal(QWidget):
         self.produtos.recarregar()
 
     # ================= janela =================
+    def faixa_topo(self):
+        """Altura livre no topo para a janela de peso da balanca. A balanca real informa a
+        altura exata da janela dela; senao, vale faixa_reservada_topo_px do config."""
+        return int(self.balanca.altura_visor_px() or self.config.get("faixa_reservada_topo_px", 150))
+
     def mostrar(self):
         if self.tela_cheia:
-            # na balanca: sem moldura, ocupando a tela MENOS a faixa do topo
+            # na balanca: sem moldura, colado embaixo da janela de peso, ate o fim da tela
             tela = QGuiApplication.primaryScreen().geometry()
-            faixa = int(self.config.get("faixa_reservada_topo_px", 150))
+            faixa = self.faixa_topo()
             self.setWindowFlags(Qt.FramelessWindowHint)
             self.setGeometry(tela.x(), tela.y() + faixa, tela.width(), tela.height() - faixa)
         else:
@@ -187,7 +194,21 @@ class JanelaPrincipal(QWidget):
 
     def item_conferido(self, codigo, registro, resultado):
         self.pedido.resultado_item(codigo, registro, resultado)
-        self.ir(self.pedido)
+        if resultado.resultado == "OK":
+            texto = "%s: confere" % registro.get("produto_nome", codigo)
+        else:
+            texto = "%s: %s" % (registro.get("produto_nome", codigo), resultado.mensagem)
+        self.finalizar_pesagem("Item registrado", texto,
+                               "sucesso" if resultado.resultado == "OK" else "erro",
+                               depois=lambda: self.ir(self.pedido))
+
+    def finalizar_pesagem(self, titulo, texto, tipo="sucesso", depois=None):
+        """Depois de toda pesagem confirmada: tira a tara da balanca e pede para retirar
+        tudo do prato. So segue (depois) quando o prato estiver vazio."""
+        if not self.balanca.limpar_tara():
+            print("ATENCAO: nao consegui tirar a tara da balanca")
+        self.retirar.abrir(titulo, texto, tipo, depois or self.ir_menu)
+        self.ir(self.retirar)
 
     def abrir_etiqueta(self, etiqueta):
         self.etiqueta.abrir(etiqueta)
@@ -204,7 +225,7 @@ class JanelaPrincipal(QWidget):
         if self.visor:
             self.visor.mostrar(atual, estavel, self.balanca.tara_g())
         tela = self.pilha.currentWidget()
-        if tela in (self.contagem, self.amostra):
+        if tela in (self.contagem, self.amostra, self.retirar):
             tela.atualizar_peso(estavel, atual)
 
     # ================= avisos do controlador =================
