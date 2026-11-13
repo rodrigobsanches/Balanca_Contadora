@@ -6,9 +6,14 @@ import time
 import config
 from display7 import criar_display, SEGMENTOS
 
+print("Teste do display iniciado")
 d = criar_display(config)
+# Obs.: nao usar SystemExit aqui: no MicroPython ele reinicia a placa e a mensagem some.
 if d is None:
-    raise SystemExit("Sem display no config.py (DISPLAY_DEZENA_PINOS / DISPLAY_UNIDADE_PINOS)")
+    print("ERRO: o config.py DA PLACA nao tem DISPLAY_DEZENA_PINOS / DISPLAY_UNIDADE_PINOS.")
+    print("Copie o bloco do display do config_exemplo.py para o config.py e envie para a placa.")
+    while True:
+        time.sleep(1)
 
 for nome, digito in (("dezena", d.dezena), ("unidade", d.unidade)):
     if not digito:
