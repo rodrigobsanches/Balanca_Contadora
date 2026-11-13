@@ -32,14 +32,14 @@ PINO_TRIG = 17         # HC-SR04
 PINO_ECHO = 18         # HC-SR04 (com divisor de tensao!)
 
 # --- Display de 7 segmentos, 2 digitos (numero do operador, 0 a 99) ---
-# Segmento -> GPIO (cada segmento com um resistor de 100 Ohm). Pinos do display (padrao,
-# digito de frente, ponto embaixo a direita): 1=e 2=d 4=c 5=dp 6=g 7=f 9=a 10=b; 3 e 8 = comum.
-# CATODO = True: comum no GND (ex.: o vermelho). False: anodo comum, comum no 3V3 (o verde).
-# Sem display: DISPLAY_DEZENA_PINOS = None e DISPLAY_UNIDADE_PINOS = None.
-DISPLAY_DEZENA_PINOS = {"a": 1, "b": 2, "c": 4, "d": 5, "e": 10, "f": 11, "g": 13}
-DISPLAY_DEZENA_CATODO = False      # verde, anodo comum
-DISPLAY_UNIDADE_PINOS = {"a": 14, "b": 15, "c": 16, "d": 21, "e": 38, "f": 39, "g": 40}
-DISPLAY_UNIDADE_CATODO = True      # vermelho, catodo comum
+# Segmento -> GPIO (cada segmento com um resistor de 100 Ohm). Ligacao pela posicao fisica
+# (digito de frente, ponto embaixo a direita): em cima g f - a b; embaixo e d COMUM c ponto.
+# CATODO = True: comum no GND (o vermelho). False: anodo comum, comum no 3V3 (o verde).
+# Detalhes e desenho: docs/ligacoes.md. Sem display: *_PINOS = None.
+DISPLAY_DEZENA_PINOS = {"a": 1, "b": 2, "c": 42, "d": 41, "e": 40, "f": 39, "g": 38}  # lado direito, pinos seguidos
+DISPLAY_DEZENA_CATODO = True       # vermelho, catodo comum (comum no GND)
+DISPLAY_UNIDADE_PINOS = {"a": 4, "b": 5, "c": 15, "d": 16, "e": 10, "f": 11, "g": 13}  # lado esquerdo (perto do 3V3)
+DISPLAY_UNIDADE_CATODO = False     # verde, anodo comum (comum no 3V3)
 
 # =====================================================================
 # Calibracao: todos os ajustes finos ficam aqui (nada fixo no codigo).

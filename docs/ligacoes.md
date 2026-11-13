@@ -21,22 +21,27 @@
 
 ## Display de 7 segmentos (2 dígitos: número do operador)
 
-Pinos do display (padrão de 10 pinos), com o dígito de frente e o ponto embaixo à direita:
-embaixo da esquerda para a direita **1 2 3 4 5**, em cima da direita para a esquerda **6 7 8 9 10**.
-`1=e 2=d 4=c 5=dp 6=g 7=f 9=a 10=b`; **3 e 8 = comum** (ligue um deles).
+Pinos do display pela **posição física**, com o dígito de frente e o ponto embaixo à direita
+(numeração usada aqui: as duas fileiras contadas da esquerda para a direita):
 
-Cada segmento: **GPIO → resistor 100 Ω → pino do display**. O ponto (pino 5) não é usado.
+| Fileira | 1º (esq.) | 2º | 3º (meio) | 4º | 5º (dir.) |
+|---|---|---|---|---|---|
+| **Em cima** | g | f | — (não usar) | a | b |
+| **Embaixo** | e | d | **comum** | c | ponto (não usado) |
 
-| Segmento | Pino do display | Dezena (GPIO) | Unidade (GPIO) |
+Use o comum **de baixo**: o de cima não é ligado por dentro no display vermelho testado.
+Cada segmento: **GPIO → resistor 100 Ω → pino do display**.
+
+| Segmento | Posição no display | Dezena: vermelho (GPIO) | Unidade: verde (GPIO) |
 |---|---|---|---|
-| a | 9 | 1 | 14 |
-| b | 10 | 2 | 15 |
-| c | 4 | 4 | 16 |
-| d | 2 | 5 | 21 |
-| e | 1 | 10 | 38 |
-| f | 7 | 11 | 39 |
-| g | 6 | 13 | 40 |
-| **comum** | 3 ou 8 | **3V3** (ânodo comum) | **GND** (cátodo comum) |
+| a | em cima, 4º | 1 | 4 |
+| b | em cima, 5º | 2 | 5 |
+| c | embaixo, 4º | 42 | 15 |
+| d | embaixo, 2º | 41 | 16 |
+| e | embaixo, 1º | 40 | 10 |
+| f | em cima, 2º | 39 | 11 |
+| g | em cima, 1º | 38 | 13 |
+| **comum** | embaixo, 3º | **GND** (cátodo comum) | **3V3** (ânodo comum) |
 
 O tipo de cada display (ânodo ou cátodo comum) e os pinos ficam no `config.py`
 (`DISPLAY_*_PINOS`, `DISPLAY_*_CATODO`). Teste: `esp32/testes/teste_display.py`.
