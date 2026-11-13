@@ -266,6 +266,7 @@ class JanelaPrincipal(QWidget):
         limite = float(self.config.get("segundos_para_sair", 60))
         if self.ctrl.operador and time.monotonic() - self._ultima_atividade > limite:
             self.ctrl.sair()
+        self.ctrl.sync_periodico()
 
     def _atualizar_barra(self):
         c = self.ctrl

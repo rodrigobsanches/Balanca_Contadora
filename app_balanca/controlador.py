@@ -15,6 +15,7 @@ Avisos enviados para a tela (avisar(tipo, info)):
   "envio"        info = {"id", "status"} (um registro mudou de estado)
   "log"          info = {"msg"}
 """
+import time
 import uuid
 
 from dados_locais import DadosLocais, agora_iso
@@ -25,13 +26,15 @@ SERVIDOR_AGORA = {".sv": "timestamp"}  # o Firebase troca pela hora do servidor
 
 class Controlador:
     def __init__(self, config, dados: DadosLocais, enviar_esp32, avisar=None,
-                 gerar_id=None, relogio=None):
+                 gerar_id=None, relogio=None, segundos=None):
         self.config = config
         self.dados = dados
         self.enviar_esp32 = enviar_esp32          # funcao(dict) -> bool
         self.avisar = avisar or (lambda tipo, info: None)
         self.gerar_id = gerar_id or (lambda: str(uuid.uuid4()))
         self.relogio = relogio or agora_iso
+        self.segundos = segundos or time.monotonic  # relogio em segundos (trocado nos testes)
+        self._ultimo_sync = None                    # quando o ultimo "sync" foi pedido
         self.id_balanca = config.get("id_balanca", "BAL-01")
         self.operador = None                       # {"uid", "nome"} de quem esta logado
         self.esp32_conectada = False
@@ -48,7 +51,7 @@ class Controlador:
 
     def ao_ficar_pronta(self):
         """ESP32 conectou ou reiniciou: pede os cadastros e reenvia o que ficou pendente."""
-        self.enviar_esp32({"c": "sync"})
+        self.pedir_sync()
         self.mostrar_no_display()
         self.reenviar_pendentes()
 
@@ -69,11 +72,26 @@ class Controlador:
             wifi_agora = bool(ev.get("wifi"))
             if wifi_agora and not self.wifi:
                 # a internet acabou de voltar: busca os cadastros mais novos
-                self.enviar_esp32({"c": "sync"})
+                self.pedir_sync()
             self.wifi = wifi_agora
             self.avisar("status", ev)
         elif tipo == "log":
             self.avisar("log", {"msg": ev.get("msg", "")})
+
+    def pedir_sync(self):
+        """Pede a ESP32 os cadastros mais novos do Firebase (operadores, produtos, pedidos)."""
+        self._ultimo_sync = self.segundos()
+        self.enviar_esp32({"c": "sync"})
+
+    def sync_periodico(self):
+        """Chamado a cada segundo pela tela. Em descanso (ninguem logado), busca os cadastros
+        a cada segundos_sync_descanso: uma mudanca feita no dashboard (ex.: numero do
+        operador) chega a balanca sem reiniciar o app. 0 desliga."""
+        intervalo = float(self.config.get("segundos_sync_descanso", 120))
+        if intervalo <= 0 or self.operador or not self.esp32_conectada:
+            return
+        if self._ultimo_sync is None or self.segundos() - self._ultimo_sync >= intervalo:
+            self.pedir_sync()
 
     def _tratar_sync(self, ev):
         if not ev.get("ok", True):
@@ -111,7 +129,7 @@ class Controlador:
             return self._identificar_com_cadastro_atual(uid)
         if self.wifi and self._uid_aguardando_sync != uid:
             self._uid_aguardando_sync = uid
-            self.enviar_esp32({"c": "sync"})
+            self.pedir_sync()
             self.avisar("verificando", {"uid": uid})
             return None
         # sem internet, ou encostou de novo enquanto esperava: decide com o que tem

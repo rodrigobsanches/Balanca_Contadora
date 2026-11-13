@@ -166,6 +166,27 @@ def test_wifi_voltando_pede_sync(ctrl, esp):
     assert len(esp.de_tipo("sync")) == 1
 
 
+def test_sync_periodico_so_em_descanso(dados, esp):
+    agora = [1000.0]
+    c = Controlador({"segundos_sync_descanso": 120}, dados, esp, segundos=lambda: agora[0])
+    c.ao_conexao(True)                       # conectou: 1o sync
+    assert len(esp.de_tipo("sync")) == 1
+    agora[0] += 60
+    c.sync_periodico()                       # ainda nao deu o intervalo
+    assert len(esp.de_tipo("sync")) == 1
+    agora[0] += 60
+    c.sync_periodico()                       # 120 s em descanso: pede de novo
+    assert len(esp.de_tipo("sync")) == 2
+    c.operador = {"uid": "X", "nome": "Ana"}
+    agora[0] += 500
+    c.sync_periodico()                       # alguem logado: nao atrapalha a operacao
+    assert len(esp.de_tipo("sync")) == 2
+    c.operador = None
+    c.config["segundos_sync_descanso"] = 0   # 0 desliga
+    c.sync_periodico()
+    assert len(esp.de_tipo("sync")) == 2
+
+
 def test_chaveiro_novo_confere_na_nuvem_antes_de_recusar(ctrl, esp, dados):
     ctrl.tratar_evento({"t": "status", "wifi": True})
     assert ctrl.identificar("NOVO:01") is None              # ainda nao sabe: pede sync
