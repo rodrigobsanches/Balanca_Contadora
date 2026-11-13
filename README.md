@@ -17,6 +17,8 @@ existem**, a partir do peso total. Serve para:
 Cada operação registra **quem fez** (chaveiro RFID), **quando** e **o resultado**, e é enviada
 para a **nuvem**. Um **dashboard** mostra estoque, histórico e auditoria, inclusive no celular.
 
+**Dashboard:** https://balanca-contadora.streamlit.app (acesso com login)
+
 ## Arquitetura
 
 ```
