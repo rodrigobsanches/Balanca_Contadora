@@ -277,3 +277,17 @@ def test_display_mostra_numero_do_operador(dados, esp):
     assert esp.de_tipo("display")[-1] == {"c": "display", "valor": "E", "segundos": 3}
     c.sair()
     assert esp.de_tipo("display")[-1]["valor"] == "--"
+
+
+def test_etiqueta_tem_operador_logado_e_pesos_bruto_e_liquido(ctrl, dados):
+    dados.salvar_cadastros("pedidos", {"PED9": {"destino": "Correios", "itens": {}}})
+    ctrl.operador = {"uid": "36:BD:9A:AC", "nome": "Rodrigo"}     # dono do chaveiro logado
+    registros = [{"produto": "P1", "produto_nome": "A", "quantidade": 10,
+                  "peso_total_g": 180.0, "tara_g": 50.0},
+                 {"produto": "P2", "produto_nome": "B", "quantidade": 5,
+                  "peso_total_g": 100.0, "tara_g": 0}]
+    e = ctrl.dados_etiqueta("PED9", registros)
+    assert e["operador"] == "Rodrigo"
+    assert e["endereco"] == ""                                # sem endereco no pedido nem no config
+    assert e["peso_bruto_g"] == 280.0 and e["peso_liquido_g"] == 230.0
+    assert e["destino"] == "Correios" and e["titulo"] == "PEDIDO PED9 - CONFERIDO"

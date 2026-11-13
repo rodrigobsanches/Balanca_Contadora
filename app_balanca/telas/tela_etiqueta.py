@@ -58,10 +58,13 @@ class PreviaEtiqueta(QWidget):
         y += 40
         p.setFont(QFont("Arial", 12))
         linhas = ["Destino: %s" % e.get("destino", "")]
+        if e.get("endereco"):
+            linhas.append(e["endereco"])
         for item in e["itens"]:
             linhas.append("%s  %s  x %s" % (item["produto"], item["nome"],
                                            formatar_numero(item["quantidade"])))
-        linhas += ["Peso: %s" % formatar_peso(e["peso_total_g"]),
+        linhas += ["Peso bruto: %s   Líquido: %s" % (formatar_peso(e["peso_bruto_g"]),
+                                                    formatar_peso(e["peso_liquido_g"])),
                    "Conferido por: %s" % e.get("operador", ""),
                    "%s   %s" % (data_legivel(e.get("data_hora")), e.get("balanca", ""))]
         for linha in linhas:

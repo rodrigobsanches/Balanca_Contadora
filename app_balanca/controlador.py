@@ -286,14 +286,18 @@ class Controlador:
     def dados_etiqueta(self, pedido_id, registros):
         """Conteudo da etiqueta 'conferido' (a previa na tela e a impressora usam o mesmo)."""
         pedido = self.dados.cadastro("pedidos", pedido_id) or {}
-        liquido = sum(r["peso_total_g"] - (r.get("tara_g") or 0) for r in registros)
+        bruto = sum(r["peso_total_g"] for r in registros)          # o que estava no prato
+        liquido = bruto - sum(r.get("tara_g") or 0 for r in registros)
         return {
             "titulo": "PEDIDO %s - CONFERIDO" % pedido_id,
             "pedido_id": pedido_id,
             "destino": pedido.get("destino", ""),
+            # endereco do cliente: o do pedido; sem ele, o ficticio do config (demo da feira)
+            "endereco": pedido.get("endereco") or self.config.get("endereco_ficticio", ""),
             "itens": [{"produto": r["produto"], "nome": r["produto_nome"],
                        "quantidade": r["quantidade"]} for r in registros],
-            "peso_total_g": round(liquido, 1),
+            "peso_bruto_g": round(bruto, 1),
+            "peso_liquido_g": round(liquido, 1),
             "operador": self.operador["nome"] if self.operador else "",
             "data_hora": self.relogio(),
             "qr": self.conteudo_qr(pedido_id),
