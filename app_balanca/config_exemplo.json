@@ -8,6 +8,7 @@
   "faixa_reservada_topo_px": 150,
   "amostra_padrao": 10,
   "segundos_para_sair": 60,
+  "segundos_sync_descanso": 120,
   "voz": false,
   "imprimir_etiqueta": false,
   "layout_etiqueta": "layouts/etiqueta_conferido.xml",
