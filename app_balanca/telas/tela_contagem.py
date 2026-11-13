@@ -165,7 +165,7 @@ class TelaContagem(QWidget):
         self.janela.ctrl.confirmar_inventario(
             self.codigo, c, peso_total_g=self._peso_liquido + tara, tara_g=tara,
             peso_unit_g=self.peso_unit, metodo=self.metodo)
-        self.janela.mostrar_mensagem(
+        self.janela.finalizar_pesagem(
             "Registrado!", "%s peças de %s" % (formatar_numero(c.quantidade),
                                                self.produto.get("nome", self.codigo)),
             "sucesso", depois=self.janela.abrir_inventario)

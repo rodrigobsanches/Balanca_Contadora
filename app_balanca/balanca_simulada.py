@@ -46,6 +46,11 @@ class BalancaSimulada(Balanca):
     def tara_g(self):
         return self._tara
 
+    def limpar_tara(self):
+        self._tara = 0.0
+        self._mudou_em = time.monotonic()
+        return True
+
     def tarar(self):
         self._tara = self._peso_bruto
         return True
