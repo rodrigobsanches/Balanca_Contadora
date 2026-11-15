@@ -25,12 +25,14 @@ para a **nuvem**. Um **dashboard** mostra estoque, histórico e auditoria, inclu
 Balança comercial (PC embarcado)  ── USB ──  ESP32-S3 (MicroPython)  ── Wi-Fi ──  Firebase
   app Python (PySide6)                        RFID PN532                            │
   contagem, telas, etiqueta                   sensor de presença HC-SR04            ▼
-                                              LED RGB, LEDs                 Dashboard Streamlit
+  voz (frases gravadas)                       LED RGB, LEDs, display        Dashboard Streamlit
+                                              de 7 segmentos (operador)
 ```
 
 - **Microcontrolador:** ESP32-S3
 - **Sensores:** célula de carga da balança, leitor RFID PN532, sensor ultrassônico HC-SR04
-- **Atuadores:** LED RGB, LEDs, impressora de etiquetas, voz (buzzer opcional)
+- **Atuadores:** LED RGB, LEDs, display de 7 segmentos (número do operador), impressora de
+  etiquetas, voz (buzzer opcional)
 - **Nuvem:** Firebase Realtime Database + Streamlit Community Cloud
 
 ## Pastas
@@ -41,18 +43,25 @@ Balança comercial (PC embarcado)  ── USB ──  ESP32-S3 (MicroPython)  �
 | `app_balanca/` | App Python da balança (telas, contagem, comunicação com a ESP32) |
 | `dashboard/` | Dashboard Streamlit |
 | `firebase/` | Regras e dados de exemplo do banco |
-| `docs/` | Documentação pública (protocolo serial, ligações) |
-| `scripts/` | Ferramentas de apoio |
+| `docs/` | Documentação pública (veja abaixo) |
+| `scripts/` | Ferramentas de apoio (verificação antes do commit, geração dos áudios, início automático na balança) |
+
+**Documentação:**
+- [Ligações da ESP32-S3](docs/ligacoes.md): pinos, resistores e montagem
+- [Protocolo serial](docs/protocolo_serial.md): mensagens JSON entre o app e a ESP32
+- [Lista de componentes](docs/lista_componentes.md): tudo o que foi usado no protótipo
 
 ## Como rodar
 
-Cada pasta terá o seu passo a passo. Por enquanto:
+### Testes no PC
 
 ```bash
 # testes no PC: lógica de contagem e partes do firmware que não dependem do hardware
 pip install -r app_balanca/requirements.txt
 pytest app_balanca/tests esp32/tests_pc dashboard/tests
 ```
+
+### App da balança
 
 O app da balança roda em **modo simulado** quando não há balança conectada, então dá para
 testar tudo no PC:
@@ -62,9 +71,21 @@ testar tudo no PC:
 python app_balanca/main.py
 ```
 
-Abre a janela do app (1366 × 768, o tamanho da tela da balança) e uma janela **Simulação**
+Abre a janela do app (1280 × 800, o tamanho da tela da balança) e uma janela **Simulação**
 para colocar peso no prato, encostar um chaveiro e simular presença. Com a ESP32 no USB,
 o chaveiro e o sensor de verdade também funcionam e os registros vão para o Firebase.
+
+Para testar só a ESP32, sem telas (feche o Thonny antes, ele ocupa a porta):
+
+```bash
+python app_balanca/monitor_esp32.py
+```
+
+### ESP32-S3
+
+Grave o MicroPython na placa, copie `esp32/config_exemplo.py` para `config.py` (Wi-Fi e
+Firebase) e envie os arquivos de `esp32/` (menos `tests_pc/`) pelo Thonny. Os testes de cada
+periférico ficam em `esp32/testes/`.
 
 ### Dashboard
 

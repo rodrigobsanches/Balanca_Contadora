@@ -1,8 +1,8 @@
 """Janela principal: visor (simulado), barra de status e as telas empilhadas.
 
 A janela so troca de tela e repassa avisos. As regras ficam no controlador.
-Tamanho: feita para a tela da balanca (1366 x 768), deixando uma faixa livre no topo
-(faixa_reservada_topo_px) para o visor de peso da propria balanca, que nao pode ser coberto.
+Tamanho: na balanca, ocupa a tela inteira menos a faixa do topo (janela de peso da propria
+balanca, que nao pode ser coberta). No PC, simula a tela da balanca (LARGURA x ALTURA).
 """
 import time
 from datetime import datetime
@@ -25,7 +25,7 @@ from telas.tela_produtos import TelaProdutos
 from telas.tela_retirar import TelaRetirar
 from voz import Voz
 
-LARGURA, ALTURA = 1366, 768
+LARGURA, ALTURA = 1280, 800   # tela da balanca (usada so na simulacao no PC)
 INTERVALO_BALANCA_MS = 200
 
 
