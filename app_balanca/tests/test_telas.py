@@ -1,6 +1,7 @@
 """Teste das telas sem abrir janela (Qt 'offscreen'): o fluxo completo do inventario."""
 import os
 import sys
+import time
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -161,3 +162,42 @@ def test_conferencia_com_falta_nao_libera(app, sistema):
     assert janela.pilha.currentWidget() is janela.mensagem
     assert "Faltam 2" in janela.mensagem.texto.text()
     assert ctrl.dados.cadastro("pedidos", "PED001")["status"] == "pendente"
+
+
+class ImpressoraFalsa:
+    def __init__(self):
+        self.vezes = 0
+
+    def imprimir_etiqueta(self, etiqueta):
+        self.vezes += 1
+        return True
+
+
+def test_varios_toques_em_imprimir_saem_uma_etiqueta(app, sistema):
+    ctrl, balanca, janela, sim, enviados = sistema
+    janela.impressora = ImpressoraFalsa()
+    janela.abrir_etiqueta({"titulo": "PEDIDO PED001", "itens": [], "qr": "PED001",
+                           "peso_bruto_g": 0, "peso_liquido_g": 0})
+    for _ in range(5):                      # toques repetidos enquanto imprime
+        janela.etiqueta.imprimir_botao.click()
+        app.processEvents()
+    assert janela.impressora.vezes == 1
+    assert janela.etiqueta.imprimir_botao.text() == "Imprimir de novo"
+
+
+def test_mexer_no_prato_conta_como_uso_e_presenca_nao(app, sistema):
+    ctrl, balanca, janela, sim, enviados = sistema
+    ctrl.identificar(UID)
+    janela.abrir_conferencia()
+    janela.abrir_pedido("PED001")
+    janela.pesar_item("P001", 10)
+    colocar_peso(app, balanca, janela, 0)
+    janela._ultima_atividade -= 100         # parado ha muito tempo
+    colocar_peso(app, balanca, janela, 52)  # coloca pecas: conta como uso
+    assert time.monotonic() - janela._ultima_atividade < 5
+
+    janela._ultima_atividade -= 100
+    ctrl.tratar_evento({"t": "presenca", "perto": True})   # so estar perto nao conta
+    app.processEvents()
+    janela._a_cada_segundo()
+    assert janela.pilha.currentWidget() is janela.descanso

@@ -5,12 +5,14 @@ A impressao de verdade e feita pelo adaptador privado (Fase 5). Sem ele, so a pr
 from datetime import datetime
 
 import qrcode
-from PySide6.QtCore import QRectF, Qt
+from PySide6.QtCore import QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from telas.componentes import botao, rotulo
 from telas.estilo import formatar_numero, formatar_peso
+
+PAUSA_APOS_IMPRIMIR_MS = 3000   # botao desligado depois de imprimir (descarta toques repetidos)
 
 
 def matriz_qr(texto):
@@ -115,11 +117,21 @@ class TelaEtiqueta(QWidget):
         self.etiqueta = etiqueta
         self.previa.mostrar(etiqueta)
         tem_impressora = self.janela.impressora is not None
+        self.imprimir_botao.setText("Imprimir etiqueta")
         self.imprimir_botao.setEnabled(tem_impressora)
         self.situacao.setText("Confira a etiqueta" if tem_impressora
                               else "Prévia da etiqueta\n(impressora não configurada)")
 
     def imprimir(self):
-        if self.janela.impressora and self.etiqueta:
-            ok = self.janela.impressora.imprimir_etiqueta(self.etiqueta)
-            self.situacao.setText("Etiqueta impressa" if ok else "Falha ao imprimir")
+        """Imprime UMA etiqueta. A impressao trava a tela por ~2 s; os toques dados nesse
+        tempo ficam na fila e chegariam depois. Por isso o botao fica desligado durante
+        a impressao e so volta um pouco depois, quando esses toques ja foram descartados."""
+        if not (self.janela.impressora and self.etiqueta) or not self.imprimir_botao.isEnabled():
+            return
+        self.imprimir_botao.setEnabled(False)
+        self.situacao.setText("Imprimindo...")
+        self.situacao.repaint()
+        ok = self.janela.impressora.imprimir_etiqueta(self.etiqueta)
+        self.situacao.setText("Etiqueta impressa" if ok else "Falha ao imprimir")
+        self.imprimir_botao.setText("Imprimir de novo")
+        QTimer.singleShot(PAUSA_APOS_IMPRIMIR_MS, lambda: self.imprimir_botao.setEnabled(True))

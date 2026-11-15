@@ -85,6 +85,7 @@ class JanelaPrincipal(QWidget):
         self.setStyleSheet(QSS)
         self.alguem_perto = False
         self._ultima_atividade = time.monotonic()
+        self._peso_ref = None              # ultimo peso visto (para saber se mexeram no prato)
         self._uid_logado = None
 
         # --- topo: visor simulado ou faixa livre para o visor da balanca real ---
@@ -233,6 +234,17 @@ class JanelaPrincipal(QWidget):
         tela = self.pilha.currentWidget()
         if tela in (self.contagem, self.amostra, self.retirar):
             tela.atualizar_peso(estavel, atual)
+            self._peso_mudou(atual)
+
+    def _peso_mudou(self, atual):
+        """Colocar ou tirar peso do prato durante uma pesagem conta como uso (nao sai sozinho)."""
+        if atual is None:
+            return
+        limiar = float(self.config.get("prato_vazio_g", 2))
+        if self._peso_ref is None or abs(atual - self._peso_ref) >= limiar:
+            if self._peso_ref is not None:
+                self._ultima_atividade = time.monotonic()
+            self._peso_ref = atual
 
     # ================= avisos do controlador =================
     def ao_aviso(self, tipo, info):
@@ -258,7 +270,6 @@ class JanelaPrincipal(QWidget):
         elif tipo == "presenca":
             self.alguem_perto = info["perto"]
             if self.alguem_perto:
-                self._ultima_atividade = time.monotonic()
                 if not self.ctrl.operador:
                     self.voz.falar("aproxime")
             self.descanso.definir_presenca(self.alguem_perto)
@@ -272,9 +283,8 @@ class JanelaPrincipal(QWidget):
     # ================= barra de status e saida automatica =================
     def _a_cada_segundo(self):
         self.barra.relogio.setText(datetime.now().strftime("%d/%m  %H:%M"))
-        if self.alguem_perto:
-            self._ultima_atividade = time.monotonic()
-        limite = float(self.config.get("segundos_para_sair", 60))
+        # sai sozinho apos segundos_para_sair sem toque na tela nem mudanca de peso na pesagem
+        limite = float(self.config.get("segundos_para_sair", 45))
         if self.ctrl.operador and time.monotonic() - self._ultima_atividade > limite:
             self.ctrl.sair()
         self.ctrl.sync_periodico()

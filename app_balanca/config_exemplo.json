@@ -7,7 +7,7 @@
   "tela_cheia": false,
   "faixa_reservada_topo_px": 150,
   "amostra_padrao": 10,
-  "segundos_para_sair": 15,
+  "segundos_para_sair": 45,
   "segundos_sync_descanso": 30,
   "voz": false,
   "imprimir_etiqueta": false,
