@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
 
 from contagem import avisos_de_precisao, conferir, contar_pecas
-from telas.componentes import botao, cartao, mudar_papel, rotulo
+from telas.componentes import BarraTaras, botao, cartao, mudar_papel, rotulo
 from telas.estilo import formatar_numero, formatar_peso
 
 NOMES_METODO = {"cadastro": "do cadastro", "amostra": "pela amostra"}
@@ -71,6 +71,8 @@ class TelaContagem(QWidget):
         direita.addLayout(detalhes)
         direita.addStretch()
         direita.addLayout(acoes)
+        self.taras = BarraTaras(janela.balanca)
+        direita.addWidget(self.taras)
         direita.addWidget(self.botao_confirmar)
         direita.addWidget(botao("Voltar", "secundario", janela.voltar_da_contagem, altura=60))
 
@@ -87,6 +89,7 @@ class TelaContagem(QWidget):
         self.esperada = esperada
         self.pedido_id = pedido_id
         self.esperado.setVisible(modo == "conferencia")
+        self.taras.recarregar(self.janela.ctrl.taras())
         self.produto = self.janela.ctrl.dados.cadastro("produtos", codigo) or {}
         self.nome.setText("%s  (%s)" % (self.produto.get("nome", codigo), codigo))
         unit = self.produto.get("peso_unit_g")

@@ -1,4 +1,4 @@
-"""Cadastros (so perfil admin): produtos, operadores (chaveiros) e pedidos."""
+"""Cadastros (so perfil admin): produtos, operadores (chaveiros), pedidos e taras."""
 import pandas as pd
 import streamlit as st
 
@@ -12,7 +12,9 @@ def pagina():
         st.error("Acesso só para administradores.")
         return
     st.title("Cadastros")
-    aba_prod, aba_oper, aba_ped = st.tabs(["Produtos", "Operadores", "Pedidos"])
+    aba_prod, aba_oper, aba_ped, aba_tara = st.tabs(["Produtos", "Operadores", "Pedidos", "Taras"])
+    with aba_tara:
+        taras()
     with aba_prod:
         produtos()
     with aba_oper:
@@ -23,6 +25,37 @@ def pagina():
 
 def _aviso_ok(texto):
     st.toast(texto, icon=":material/check_circle:")
+
+
+# ---------------- taras pre-programadas ----------------
+# Mesmo limite do app da balanca: MAX_TARAS em app_balanca/controlador.py (botoes que cabem na tela).
+MAX_TARAS = 4
+
+
+def taras():
+    st.caption("Botões de tara pré-programada nas telas de contagem e amostra da balança "
+               "(ex.: o pote usado na feira). Chegam à balança na próxima busca (até 30 s). "
+               "Deixe o nome vazio ou o peso 0 para tirar o botão.")
+    cadastradas = fb.ler("taras")
+    with st.form("form_taras"):
+        linhas = []
+        for i in range(1, MAX_TARAS + 1):
+            chave = "T%d" % i
+            atual = cadastradas.get(chave, {})
+            c1, c2 = st.columns([3, 1])
+            nome = c1.text_input("Botão %d: nome" % i, value=atual.get("nome", ""), key="tara_nome_%d" % i)
+            g = c2.number_input("Peso (g)", min_value=0.0, step=1.0, format="%.0f",
+                                value=float(atual.get("g") or 0), key="tara_g_%d" % i)
+            linhas.append((chave, i, nome.strip(), g))
+        salvar = st.form_submit_button("Salvar taras", type="primary")
+    if salvar:
+        for chave, ordem, nome, g in linhas:
+            if nome and g > 0:
+                fb.gravar("taras/" + chave, {"nome": nome, "g": round(g, 1), "ordem": ordem})
+            elif chave in cadastradas:
+                fb.apagar("taras/" + chave)
+        _aviso_ok("Taras salvas")
+        st.rerun()
 
 
 # ---------------- produtos ----------------

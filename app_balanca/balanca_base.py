@@ -42,6 +42,11 @@ class Balanca:
         """Faz a tara com o que esta no prato. Devolve True se deu certo."""
         raise NotImplementedError
 
+    def tara_predefinida(self, gramas):
+        """Tara pre-programada (ex.: pote de 26 g): a tara passa a valer `gramas`, sem
+        precisar pesar o pote. Devolve True se deu certo."""
+        return False
+
     def zerar(self):
         raise NotImplementedError
 

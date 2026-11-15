@@ -201,3 +201,25 @@ def test_mexer_no_prato_conta_como_uso_e_presenca_nao(app, sistema):
     app.processEvents()
     janela._a_cada_segundo()
     assert janela.pilha.currentWidget() is janela.descanso
+
+
+def test_tara_pre_programada(app, sistema):
+    ctrl, balanca, janela, sim, enviados = sistema
+    ctrl.tratar_evento({"t": "sync", "ok": True, "operadores": {UID: {"nome": "R", "ativo": True}},
+                        "produtos": {"P001": {"nome": "Parafuso", "peso_unit_g": 3}}, "pedidos": {},
+                        "taras": {"T2": {"nome": "Caixa", "g": 80, "ordem": 2},
+                                  "T1": {"nome": "Pote", "g": 26, "ordem": 1},
+                                  "T3": {"nome": "Vazia", "g": 0, "ordem": 3}}})
+    assert [t["nome"] for t in ctrl.taras()] == ["Pote", "Caixa"]   # ordem; peso 0 fica de fora
+    ctrl.identificar(UID)
+    janela.abrir_inventario()
+    janela.abrir_contagem("P001")
+    assert [b.text() for b in janela.contagem.taras.botoes] == ["Pote\n26 g", "Caixa\n80 g"]
+    janela.contagem.taras.botoes[0].click()
+    assert balanca.tara_g() == 26
+    colocar_peso(app, balanca, janela, 26 + 30)                  # pote + 10 parafusos de 3 g
+    assert janela.contagem.quantidade.text() == "10"
+
+    # firmware antigo (sem "taras" no sync) nao apaga as taras guardadas
+    ctrl.tratar_evento({"t": "sync", "ok": True, "operadores": {}, "produtos": {}, "pedidos": {}})
+    assert len(ctrl.taras()) == 2

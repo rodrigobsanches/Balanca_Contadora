@@ -55,6 +55,11 @@ class BalancaSimulada(Balanca):
         self._tara = self._peso_bruto
         return True
 
+    def tara_predefinida(self, gramas):
+        self._tara = float(gramas)
+        self._mudou_em = time.monotonic()
+        return True
+
     def zerar(self):
         self._tara = 0.0
         return True

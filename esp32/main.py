@@ -17,7 +17,7 @@ from serial_app import SerialApp, enviar
 from sinalizacao import Sinalizacao, PADROES
 from display7 import criar_display
 
-VERSAO_FW = "0.4"
+VERSAO_FW = "0.5"
 
 
 def ajuste(nome, padrao):
@@ -128,7 +128,8 @@ def sincronizar():
         enviar({"t": "sync", "ok": True,
                 "operadores": fb.ler("operadores") or {},
                 "produtos": fb.ler("produtos") or {},
-                "pedidos": fb.ler("pedidos") or {}})
+                "pedidos": fb.ler("pedidos") or {},
+                "taras": fb.ler("taras") or {}})
     except Exception as e:
         enviar({"t": "sync", "ok": False, "erro": str(e)})
 

@@ -9,14 +9,14 @@
 
 | Comando | Exemplo | O que a ESP32 faz |
 |---|---|---|
-| `ping` | `{"c":"ping"}` | responde `{"t":"pong","fw":"0.4"}` |
+| `ping` | `{"c":"ping"}` | responde `{"t":"pong","fw":"0.5"}` |
 | `status` | `{"c":"status"}` | responde com o evento `status` na hora |
 | `display` | `{"c":"display","valor":12}` / `{"c":"display","valor":"E","segundos":3}` | mostra no display de 2 dígitos: número 0–99, `--` ou `E`; com `segundos`, mostra por um tempo e volta ao anterior |
 | `wifi` | `{"c":"wifi","ligado":false}` | desliga (ou religa, com `true`) o Wi-Fi de propósito, para testar e demonstrar a fila offline |
 | `sinal` | `{"c":"sinal","estado":"ok"}` | LED e buzzer: `ocioso`, `aguardando`, `ok`, `erro`, `atencao` |
 | `enviar` | `{"c":"enviar","id":"<uuid>","path":"contagens/<uuid>","dados":{...}}` | **PUT** no Firebase; se falhar, guarda na fila offline |
 | `atualizar` | `{"c":"atualizar","id":"<uuid>","path":"produtos/P001","dados":{"estoque_atual":120}}` | **PATCH** no Firebase |
-| `sync` | `{"c":"sync"}` | baixa operadores, produtos e pedidos e responde com `t:"sync"` |
+| `sync` | `{"c":"sync"}` | baixa operadores, produtos, pedidos e taras e responde com `t:"sync"` |
 
 ### Controle de envio (obrigatório para o app)
 
@@ -38,7 +38,7 @@ caracteres. Por isso o app (`app_balanca/esp32_serial.py`):
 | `rfid` | `{"t":"rfid","uid":"04:A2:3B:1C"}` |
 | `presenca` | `{"t":"presenca","perto":true,"cm":42}` |
 | `ack` | ver tabela abaixo |
-| `sync` | `{"t":"sync","ok":true,"operadores":{...},"produtos":{...},"pedidos":{...}}` / `{"t":"sync","ok":false,"erro":"sem wifi"}` |
+| `sync` | `{"t":"sync","ok":true,"operadores":{...},"produtos":{...},"pedidos":{...},"taras":{...}}` / `{"t":"sync","ok":false,"erro":"sem wifi"}` |
 | `status` | `{"t":"status","wifi":true,"rede":"casa","rssi":-61,"fila":0}` (a cada 30 s e quando o Wi-Fi muda) |
 | `log` | `{"t":"log","msg":"..."}` |
 

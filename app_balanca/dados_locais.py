@@ -1,6 +1,6 @@
 """Dados guardados no proprio PC da balanca (SQLite).
 
-1. Copia local dos cadastros (operadores, produtos, pedidos), vinda do comando "sync".
+1. Copia local dos cadastros (operadores, produtos, pedidos, taras), vinda do comando "sync".
    Assim o app funciona mesmo se a ESP32 ficar sem internet.
 2. Registro de cada operacao enviada a nuvem, com o estado:
      pendente -> ainda sem resposta da ESP32 (o app reenvia quando ela voltar)
@@ -13,7 +13,7 @@ import sqlite3
 import threading
 from datetime import datetime
 
-TIPOS_CADASTRO = ("operadores", "produtos", "pedidos")
+TIPOS_CADASTRO = ("operadores", "produtos", "pedidos", "taras")
 
 
 def agora_iso():

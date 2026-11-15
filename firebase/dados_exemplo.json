@@ -4,6 +4,12 @@
     "P002": { "nome": "Parafuso médio", "peso_unit_g": 5, "estoque_atual": 100, "estoque_minimo": 30 },
     "P003": { "nome": "Parafuso grande", "peso_unit_g": 7, "estoque_atual": 100, "estoque_minimo": 30 }
   },
+  "taras": {
+    "T1": { "nome": "Pote", "g": 26, "ordem": 1 },
+    "T2": { "nome": "Tara 2", "g": 50, "ordem": 2 },
+    "T3": { "nome": "Tara 3", "g": 100, "ordem": 3 },
+    "T4": { "nome": "Tara 4", "g": 200, "ordem": 4 }
+  },
   "operadores": {
     "UID-DO-CHAVEIRO-1": { "nome": "Rodrigo", "ativo": true }
   },

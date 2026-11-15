@@ -17,7 +17,7 @@ TIMEOUT_S = 10
 MARGEM_RENOVACAO_S = 300  # renova 5 minutos antes de vencer
 
 # Pastas do banco em que a ESP32 pode mexer (protege contra caminho errado vindo da serial)
-RAIZES_PERMITIDAS = ("contagens", "produtos", "pedidos", "operadores",
+RAIZES_PERMITIDAS = ("contagens", "produtos", "pedidos", "operadores", "taras",
                      "rfid_desconhecidos", "dispositivos")
 CARACTERES_PERMITIDOS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-:/"
 

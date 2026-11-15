@@ -1,6 +1,6 @@
-"""Pecas reaproveitadas pelas telas: botao grande, rotulo com papel, cartao."""
+"""Pecas reaproveitadas pelas telas: botao grande, rotulo com papel, cartao, barra de taras."""
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QLabel, QPushButton
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QWidget
 
 
 def botao(texto, tipo=None, ao_clicar=None, altura=90):
@@ -36,3 +36,28 @@ def cartao():
     f = QFrame()
     f.setObjectName("cartao")
     return f
+
+
+class BarraTaras(QWidget):
+    """Botoes de tara pre-programada (ex.: "Pote 26 g"), cadastrados no dashboard.
+    Usada nas telas de contagem e de amostra; recarregar() a cada vez que a tela abre."""
+    def __init__(self, balanca, altura=70):
+        super().__init__()
+        self.balanca = balanca
+        self.altura = altura
+        self.botoes = []
+        self._layout = QHBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+
+    def recarregar(self, taras):
+        for b in self.botoes:
+            b.deleteLater()
+        self.botoes = []
+        for t in taras:
+            g = t["g"]
+            texto = "%s\n%s g" % (t["nome"], ("%g" % g).replace(".", ","))
+            b = botao(texto, "pequeno", lambda _=False, g=g: self.balanca.tara_predefinida(g),
+                      self.altura)
+            self._layout.addWidget(b)
+            self.botoes.append(b)
+        self.setVisible(bool(self.botoes))

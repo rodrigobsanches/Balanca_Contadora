@@ -18,10 +18,11 @@ Avisos enviados para a tela (avisar(tipo, info)):
 import time
 import uuid
 
-from dados_locais import DadosLocais, agora_iso
+from dados_locais import TIPOS_CADASTRO, DadosLocais, agora_iso
 from contagem import conferir
 
 SERVIDOR_AGORA = {".sv": "timestamp"}  # o Firebase troca pela hora do servidor
+MAX_TARAS = 4   # botoes de tara pre-programada que cabem na tela (igual em dashboard/paginas/cadastros.py)
 
 
 class Controlador:
@@ -79,7 +80,7 @@ class Controlador:
             self.avisar("log", {"msg": ev.get("msg", "")})
 
     def pedir_sync(self):
-        """Pede a ESP32 os cadastros mais novos do Firebase (operadores, produtos, pedidos)."""
+        """Pede a ESP32 os cadastros mais novos do Firebase (operadores, produtos, pedidos, taras)."""
         self._ultimo_sync = self.segundos()
         self.enviar_esp32({"c": "sync"})
 
@@ -97,8 +98,9 @@ class Controlador:
         if not ev.get("ok", True):
             self.avisar("log", {"msg": "Sem sync: %s (usando os dados guardados)" % ev.get("erro")})
         else:
-            for tipo in ("operadores", "produtos", "pedidos"):
-                self.dados.salvar_cadastros(tipo, ev.get(tipo) or {})
+            for tipo in TIPOS_CADASTRO:
+                if tipo in ev:   # firmware antigo nao manda "taras": mantem as guardadas
+                    self.dados.salvar_cadastros(tipo, ev.get(tipo) or {})
             self.wifi = True   # sync deu certo: a internet esta ok (evita pedir de novo)
             self.avisar("cadastros", None)
         # um chaveiro esperava os cadastros novos: decide agora (cadastrado ou desconhecido)
@@ -196,6 +198,20 @@ class Controlador:
     # ================= cadastros =================
     def produtos(self):
         return self.dados.cadastros("produtos")
+
+    def taras(self):
+        """Taras pre-programadas, na ordem do cadastro: [{"nome": "Pote", "g": 26}, ...].
+        Vale so quem tem nome e peso maior que zero; no maximo MAX_TARAS botoes."""
+        lista = []
+        for chave, t in sorted(self.dados.cadastros("taras").items(),
+                               key=lambda item: (item[1].get("ordem", 99), item[0])):
+            try:
+                g = float(t.get("g") or 0)
+            except (TypeError, ValueError):
+                continue
+            if g > 0 and t.get("nome") and t.get("ativo", True) not in (False, "false"):
+                lista.append({"id": chave, "nome": str(t["nome"]), "g": g})
+        return lista[:MAX_TARAS]
 
     def pedidos_pendentes(self):
         return {k: v for k, v in self.dados.cadastros("pedidos").items()

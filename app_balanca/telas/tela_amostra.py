@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from contagem import avisos_de_precisao, peso_unitario_por_amostra
-from telas.componentes import botao, cartao, rotulo
+from telas.componentes import BarraTaras, botao, cartao, rotulo
 from telas.estilo import formatar_peso
 
 MINIMO, MAXIMO = 1, 100
@@ -47,6 +47,8 @@ class TelaAmostra(QWidget):
                                  lambda: self.confirmar(True), altura=100)
         lateral = QVBoxLayout()
         lateral.addWidget(botao("Tara", "secundario", janela.balanca.tarar, altura=80))
+        self.taras = BarraTaras(janela.balanca)
+        lateral.addWidget(self.taras)
         lateral.addStretch()
         lateral.addWidget(self.usar)
         lateral.addWidget(self.usar_salvar)
@@ -63,6 +65,7 @@ class TelaAmostra(QWidget):
 
     def abrir(self, nome_produto):
         self.titulo.setText("Amostra: %s" % nome_produto)
+        self.taras.recarregar(self.janela.ctrl.taras())
         self.mudar_n(0)
 
     def mudar_n(self, delta):
