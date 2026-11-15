@@ -1,6 +1,6 @@
 """Tela depois de toda pesagem confirmada: 'Registrado!' + 'Retire tudo da balança'.
 
-Regras (definidas pelo autor em 13/11):
+Regras:
 - ao confirmar, o app TIRA A TARA automaticamente (evita tara esquecida na proxima pesagem);
 - a tela so libera outras atividades quando o prato esta VAZIO: peso estavel perto de zero
   e sem tara.

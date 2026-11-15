@@ -69,6 +69,8 @@ QPushButton[tipo="produto"] {{
 }}
 QPushButton[tipo="produto"]:pressed {{ background: #E3F2FD; border-color: {COR['primaria']}; }}
 QPushButton[tipo="pequeno"] {{ font-size: 20px; padding: 10px 16px; }}
+/* desligado vale para todos os tipos (sem isso o verde do "sucesso" continuava aceso) */
+QPushButton[tipo]:disabled {{ background: {COR['desativado']}; color: #ECEFF1; border-color: {COR['desativado']}; }}
 
 QLabel {{ background: transparent; }}
 QLabel[papel="titulo"] {{ font-size: 40px; font-weight: 700; }}
@@ -91,6 +93,15 @@ QLabel[papel="info"] {{
     font-size: 26px; font-weight: 600; color: white;
     background: {COR['primaria']}; border-radius: 12px; padding: 14px 20px;
 }}
+
+/* selo de situacao (lista do pedido): mesma largura em todas as linhas */
+QLabel[papel="selo_ok"], QLabel[papel="selo_erro"] {{
+    font-size: 22px; font-weight: 700; border-radius: 22px; padding: 8px 16px;
+}}
+QLabel[papel="selo_ok"] {{ color: white; background: {COR['sucesso']}; }}
+QLabel[papel="selo_erro"] {{ color: white; background: {COR['erro']}; }}
+QLabel[papel="nome"] {{ font-size: 26px; font-weight: 700; }}
+QLabel[papel="detalhe"] {{ font-size: 20px; color: {COR['texto_suave']}; }}
 
 QFrame#cartao {{ background: {COR['cartao']}; border: 1px solid {COR['borda']}; border-radius: 18px; }}
 QFrame#barra_status {{ background: {COR['cartao']}; border-bottom: 1px solid {COR['borda']}; }}

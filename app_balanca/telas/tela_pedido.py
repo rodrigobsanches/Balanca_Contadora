@@ -5,10 +5,14 @@ foram pesados. Tudo OK: etiqueta de conferido. Divergencia: aviso em vermelho e 
 pedido continua pendente (da para recontar o item).
 """
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from telas.componentes import botao, mudar_papel, rotulo
+from telas.componentes import (botao, cabecalho, cartao, limpar_layout, montar_tela, mudar_papel,
+                               rodape, rolagem, rotulo)
 from telas.estilo import formatar_numero
+
+# larguras fixas: as colunas ficam alinhadas de uma linha para a outra
+LARGURA_QTD, LARGURA_SELO, LARGURA_BOTAO = 150, 250, 190
 
 
 class TelaPedido(QWidget):
@@ -20,35 +24,16 @@ class TelaPedido(QWidget):
         self.registros = {}      # codigo -> ultimo registro de contagem do item
         self.resultados = {}     # codigo -> ResultadoConferencia
 
-        self.titulo = rotulo("", "titulo", Qt.AlignLeft | Qt.AlignVCenter)
-        self.destino = rotulo("", "subtitulo", Qt.AlignLeft | Qt.AlignVCenter)
-        cabecalho = QVBoxLayout()
-        cabecalho.addWidget(self.titulo)
-        cabecalho.addWidget(self.destino)
+        topo, self.titulo, self.destino = cabecalho()
 
         self.lista_widget = QWidget()
-        self.lista = QGridLayout(self.lista_widget)
-        self.lista.setHorizontalSpacing(20)
-        self.lista.setVerticalSpacing(12)
-        rolagem = QScrollArea()
-        rolagem.setWidgetResizable(True)
-        rolagem.setWidget(self.lista_widget)
+        self.lista = QVBoxLayout(self.lista_widget)
+        self.lista.setContentsMargins(0, 0, 0, 0)
+        self.lista.setSpacing(12)
 
-        self.finalizar_botao = botao("Finalizar", "sucesso", self.finalizar, altura=90)
-        lateral = QVBoxLayout()
-        lateral.addStretch()
-        lateral.addWidget(self.finalizar_botao)
-        lateral.addWidget(botao("Voltar", "secundario", janela.abrir_conferencia, altura=70))
-
-        corpo = QHBoxLayout()
-        corpo.setSpacing(30)
-        corpo.addWidget(rolagem, 3)
-        corpo.addLayout(lateral, 1)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(40, 16, 40, 16)
-        layout.addLayout(cabecalho)
-        layout.addLayout(corpo, 1)
+        self.finalizar_botao = botao("Finalizar", "sucesso", self.finalizar)
+        base = rodape([botao("Voltar", "secundario", janela.abrir_conferencia)], [self.finalizar_botao])
+        montar_tela(self, topo, rolagem(self.lista_widget), base)
 
     def abrir(self, pedido_id):
         self.pedido_id = pedido_id
@@ -56,7 +41,6 @@ class TelaPedido(QWidget):
         self.registros = {}
         self.resultados = {}
         self.titulo.setText("Pedido %s" % pedido_id)
-        self.destino.setText(self.pedido.get("destino", ""))
         self._montar_lista()
 
     def itens(self):
@@ -69,33 +53,54 @@ class TelaPedido(QWidget):
         self._montar_lista()
 
     def _montar_lista(self):
-        while self.lista.count():
-            item = self.lista.takeAt(0)
-            if item.widget():
-                item.widget().hide()
-                item.widget().deleteLater()
+        limpar_layout(self.lista)
         produtos = self.janela.ctrl.produtos()
-        for linha, (codigo, esperada) in enumerate(sorted(self.itens().items())):
+        for codigo, esperada in sorted(self.itens().items()):
             nome = produtos.get(codigo, {}).get("nome", codigo)
-            self.lista.addWidget(rotulo("%s\n%s" % (nome, codigo), "peso",
-                                        Qt.AlignLeft | Qt.AlignVCenter), linha, 0)
-            self.lista.addWidget(rotulo("%s peças" % formatar_numero(esperada), "subtitulo"), linha, 1)
-            situacao = rotulo("", "subtitulo")
-            r = self.resultados.get(codigo)
-            if r:
-                situacao.setText("Confere" if r.resultado == "OK" else r.mensagem)
-                mudar_papel(situacao, "ok" if r.resultado == "OK" else "erro")
-            else:
-                situacao.setText("a pesar")
-            self.lista.addWidget(situacao, linha, 2)
-            pesar = botao("Recontar" if r else "Pesar", "secundario" if r else None, altura=70)
-            pesar.setMinimumWidth(170)
-            pesar.clicked.connect(lambda _=False, c=codigo, e=esperada: self.janela.pesar_item(c, e))
-            self.lista.addWidget(pesar, linha, 3)
-        self.lista.setColumnStretch(0, 1)
-        self.lista.setRowStretch(len(self.itens()), 1)
+            self.lista.addWidget(self._linha(codigo, nome, esperada, self.resultados.get(codigo)))
+        self.lista.addStretch()
+        pesados = len(set(self.resultados) & set(self.itens()))
+        self.destino.setText("Destino: %s   ·   %d de %d ite%s pesado%s" % (
+            self.pedido.get("destino", ""), pesados, len(self.itens()),
+            "m" if len(self.itens()) == 1 else "ns", "" if pesados == 1 else "s"))
         self.finalizar_botao.setEnabled(bool(self.itens()) and
                                         set(self.resultados) >= set(self.itens()))
+
+    def _linha(self, codigo, nome, esperada, r):
+        """Um item do pedido: nome e codigo | quantidade | situacao | Pesar (no fim da linha)."""
+        linha = cartao()
+        h = QHBoxLayout(linha)
+        h.setContentsMargins(24, 12, 16, 12)
+        h.setSpacing(16)
+        textos = QVBoxLayout()
+        textos.setSpacing(0)
+        textos.addWidget(rotulo(nome, "nome", Qt.AlignLeft | Qt.AlignVCenter))
+        textos.addWidget(rotulo(codigo, "detalhe", Qt.AlignLeft | Qt.AlignVCenter))
+        h.addLayout(textos, 1)
+
+        qtd = rotulo("%s peças" % formatar_numero(esperada), "peso", Qt.AlignRight | Qt.AlignVCenter)
+        qtd.setFixedWidth(LARGURA_QTD)
+        h.addWidget(qtd)
+
+        # selo de situacao so aparece depois de pesar; antes fica oculto, mas guardando o
+        # lugar (as colunas continuam alinhadas entre itens pesados e nao pesados)
+        selo = rotulo()
+        selo.setFixedWidth(LARGURA_SELO)
+        politica = selo.sizePolicy()
+        politica.setRetainSizeWhenHidden(True)
+        selo.setSizePolicy(politica)
+        if r:
+            selo.setText("Confere" if r.resultado == "OK" else r.mensagem.rstrip("."))
+            mudar_papel(selo, "selo_ok" if r.resultado == "OK" else "selo_erro")
+        else:
+            selo.hide()
+        h.addWidget(selo)
+
+        pesar = botao("Recontar" if r else "Pesar", "secundario" if r else None, altura=70)
+        pesar.setFixedWidth(LARGURA_BOTAO)
+        pesar.clicked.connect(lambda _=False, c=codigo, e=esperada: self.janela.pesar_item(c, e))
+        h.addWidget(pesar)
+        return linha
 
     def finalizar(self):
         registros = [self.registros[c] for c in sorted(self.itens())]

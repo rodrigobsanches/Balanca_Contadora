@@ -1,4 +1,4 @@
-# main.py - Fase 2: periféricos + comandos pela serial + Wi-Fi + Firebase + fila offline
+# main.py - periféricos + comandos pela serial + Wi-Fi + Firebase + fila offline
 #   - presenca (HC-SR04) e chaveiro (PN532) viram eventos JSON para o app
 #   - o app manda comandos JSON pela serial (ver docs/protocolo_serial.md)
 #   - "enviar" e "atualizar" vao para o Firebase; sem internet, ficam na fila e sobem depois

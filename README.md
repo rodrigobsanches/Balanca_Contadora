@@ -44,7 +44,7 @@ Balança comercial (PC embarcado)  ── USB ──  ESP32-S3 (MicroPython)  �
 | `dashboard/` | Dashboard Streamlit |
 | `firebase/` | Regras e dados de exemplo do banco |
 | `docs/` | Documentação pública (veja abaixo) |
-| `scripts/` | Ferramentas de apoio (verificação antes do commit, geração dos áudios, início automático na balança) |
+| `scripts/` | Ferramentas de apoio (geração dos áudios e início automático na balança) |
 
 **Documentação:**
 - [Ligações da ESP32-S3](docs/ligacoes.md): pinos, resistores e montagem

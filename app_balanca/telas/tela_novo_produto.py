@@ -7,7 +7,7 @@ no prato: da para ir acrescentando (1 -> mais 4 -> mais 5).
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from contagem import avisos_de_precisao, peso_unitario_por_etapas
-from telas.componentes import BarraTaras, botao, cartao, rotulo
+from telas.componentes import BarraTaras, botao, cabecalho, cartao, montar_tela, rodape, rotulo
 from telas.estilo import formatar_peso
 
 ETAPAS = (1, 5, 10)              # pecas no prato em cada etapa
@@ -27,7 +27,8 @@ class TelaNovoProduto(QWidget):
         self._peso = None
         self._peso_unit = None
 
-        self.titulo = rotulo("Novo produto", "titulo")
+        topo, self.titulo, _ = cabecalho("Novo produto",
+                                         "Pese 1, 5 e 10 peças: a balança calcula o peso de 1 peça")
         self.instrucao = rotulo("", "subtitulo")
         self.numero = rotulo("", "gigante")
         self.numero.setStyleSheet("font-size: 90px;")    # "10 peças" nao cabe no tamanho gigante
@@ -43,31 +44,27 @@ class TelaNovoProduto(QWidget):
         q.addWidget(self.etapas)
         q.addWidget(self.avisos)
 
-        topo = QHBoxLayout()
-        topo.addWidget(botao("Tara", "secundario", janela.balanca.tarar, altura=70))
-        topo.addWidget(botao("Zerar", "secundario", janela.zerar_balanca, altura=70))
+        ajustes = QHBoxLayout()
+        ajustes.addWidget(botao("Tara", "secundario", janela.balanca.tarar, altura=70))
+        ajustes.addWidget(botao("Zerar", "secundario", janela.zerar_balanca, altura=70))
         self.taras = BarraTaras(janela.balanca)
-        self.registrar = botao("", "sucesso", self.registrar_etapa, altura=100)
-        self.salvar = botao("Salvar produto", "sucesso", self.salvar_produto, altura=100)
         lateral = QVBoxLayout()
-        lateral.addLayout(topo)
+        lateral.setSpacing(16)
+        lateral.addLayout(ajustes)
         lateral.addWidget(self.taras)
         lateral.addStretch()
-        lateral.addWidget(self.registrar)
-        lateral.addWidget(self.salvar)
-        refazer_cancelar = QHBoxLayout()
-        refazer_cancelar.addWidget(botao("Refazer", "secundario", self.abrir, altura=70))
-        refazer_cancelar.addWidget(botao("Cancelar", "secundario", janela.abrir_inventario, altura=70))
-        lateral.addLayout(refazer_cancelar)
 
         corpo = QHBoxLayout()
-        corpo.setSpacing(30)
+        corpo.setSpacing(24)
         corpo.addWidget(quadro, 3)
         corpo.addLayout(lateral, 2)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(40, 16, 40, 16)
-        layout.addWidget(self.titulo)
-        layout.addLayout(corpo, 1)
+
+        self.registrar = botao("", "sucesso", self.registrar_etapa)
+        self.salvar = botao("Salvar produto", "sucesso", self.salvar_produto)
+        base = rodape([botao("Cancelar", "secundario", janela.abrir_inventario),
+                       botao("Refazer", "secundario", self.abrir)],
+                      [self.registrar, self.salvar])
+        montar_tela(self, topo, corpo, base)
 
     # ---------- etapas ----------
     def abrir(self):

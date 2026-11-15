@@ -1,7 +1,7 @@
 """Tela 4a - Conferencia: escolher o pedido pendente."""
-from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QGridLayout, QWidget
 
-from telas.componentes import botao, rotulo
+from telas.componentes import botao, cabecalho, limpar_layout, montar_tela, rodape, rolagem, rotulo
 
 COLUNAS = 2
 
@@ -10,32 +10,22 @@ class TelaPedidos(QWidget):
     def __init__(self, janela):
         super().__init__()
         self.janela = janela
-        titulo = rotulo("Conferência: escolha o pedido", "titulo")
-        voltar = botao("Voltar", "secundario", janela.ir_menu, altura=70)
-        voltar.setMaximumWidth(220)
-        topo = QHBoxLayout()
-        topo.addWidget(titulo, 1)
-        topo.addWidget(voltar)
+        topo, _, self.subtitulo = cabecalho("Conferência de despacho", "Escolha o pedido")
 
         self.grade_widget = QWidget()
         self.grade = QGridLayout(self.grade_widget)
-        self.grade.setSpacing(18)
-        rolagem = QScrollArea()
-        rolagem.setWidgetResizable(True)
-        rolagem.setWidget(self.grade_widget)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(40, 20, 40, 20)
-        layout.addLayout(topo)
-        layout.addWidget(rolagem, 1)
+        self.grade.setContentsMargins(0, 0, 0, 0)
+        self.grade.setSpacing(16)
+        for coluna in range(COLUNAS):        # cartoes da mesma largura
+            self.grade.setColumnStretch(coluna, 1)
+        base = rodape([botao("Voltar", "secundario", janela.ir_menu)])
+        montar_tela(self, topo, rolagem(self.grade_widget), base)
 
     def recarregar(self):
-        while self.grade.count():
-            item = self.grade.takeAt(0)
-            if item.widget():
-                item.widget().hide()
-                item.widget().deleteLater()
+        limpar_layout(self.grade)
         pedidos = self.janela.ctrl.pedidos_pendentes()
+        n = len(pedidos)
+        self.subtitulo.setText("Escolha o pedido   ·   %d pendente%s" % (n, "" if n == 1 else "s"))
         if not pedidos:
             self.grade.addWidget(rotulo("Nenhum pedido pendente.", "subtitulo"), 0, 0)
             return
@@ -45,4 +35,4 @@ class TelaPedidos(QWidget):
             b = botao(texto, "produto", altura=130)
             b.clicked.connect(lambda _=False, pid=pid: self.janela.abrir_pedido(pid))
             self.grade.addWidget(b, i // COLUNAS, i % COLUNAS)
-        self.grade.setRowStretch(len(pedidos) // COLUNAS + 1, 1)
+        self.grade.setRowStretch((len(pedidos) + COLUNAS - 1) // COLUNAS, 1)

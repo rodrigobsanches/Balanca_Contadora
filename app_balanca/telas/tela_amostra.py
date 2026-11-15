@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from contagem import avisos_de_precisao, peso_unitario_por_amostra
-from telas.componentes import BarraTaras, botao, cartao, rotulo
+from telas.componentes import BarraTaras, botao, cabecalho, cartao, montar_tela, rodape, rotulo
 from telas.estilo import formatar_peso
 
 MINIMO, MAXIMO = 1, 100
@@ -15,7 +15,7 @@ class TelaAmostra(QWidget):
         self.n = int(janela.config.get("amostra_padrao", 10))
         self._peso = None
 
-        self.titulo = rotulo("Amostra", "titulo")
+        topo, self.titulo, self.produto = cabecalho("Amostra", "")
         self.instrucao = rotulo("", "subtitulo")
         self.numero = rotulo("", "gigante")
         menos = botao("−", "secundario", lambda: self.mudar_n(-1), altura=110)
@@ -42,32 +42,30 @@ class TelaAmostra(QWidget):
         q.addWidget(self.resultado)
         q.addWidget(self.avisos)
 
-        self.usar = botao("Usar", ao_clicar=lambda: self.confirmar(False), altura=100)
-        self.usar_salvar = botao("Usar e salvar\nno cadastro", "sucesso",
-                                 lambda: self.confirmar(True), altura=100)
         lateral = QVBoxLayout()
-        topo = QHBoxLayout()
-        topo.addWidget(botao("Tara", "secundario", janela.balanca.tarar, altura=80))
-        topo.addWidget(botao("Zerar", "secundario", janela.zerar_balanca, altura=80))
-        lateral.addLayout(topo)
+        lateral.setSpacing(16)
+        topo_lateral = QHBoxLayout()
+        topo_lateral.addWidget(botao("Tara", "secundario", janela.balanca.tarar, altura=70))
+        topo_lateral.addWidget(botao("Zerar", "secundario", janela.zerar_balanca, altura=70))
+        lateral.addLayout(topo_lateral)
         self.taras = BarraTaras(janela.balanca)
         lateral.addWidget(self.taras)
         lateral.addStretch()
-        lateral.addWidget(self.usar)
-        lateral.addWidget(self.usar_salvar)
-        lateral.addWidget(botao("Cancelar", "secundario", janela.voltar_contagem, altura=70))
 
         corpo = QHBoxLayout()
-        corpo.setSpacing(30)
+        corpo.setSpacing(24)
         corpo.addWidget(quadro, 3)
         corpo.addLayout(lateral, 2)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(40, 20, 40, 20)
-        layout.addWidget(self.titulo)
-        layout.addLayout(corpo, 1)
+
+        self.usar = botao("Usar", ao_clicar=lambda: self.confirmar(False))
+        self.usar_salvar = botao("Usar e salvar", "sucesso", lambda: self.confirmar(True))
+        self.usar_salvar.setToolTip("Usa agora e grava o peso de 1 peça no cadastro do produto")
+        base = rodape([botao("Cancelar", "secundario", janela.voltar_contagem)],
+                      [self.usar, self.usar_salvar])
+        montar_tela(self, topo, corpo, base)
 
     def abrir(self, nome_produto):
-        self.titulo.setText("Amostra: %s" % nome_produto)
+        self.produto.setText(nome_produto)
         self.taras.recarregar(self.janela.ctrl.taras())
         self.mudar_n(0)
 

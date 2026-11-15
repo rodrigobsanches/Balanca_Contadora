@@ -9,7 +9,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
 
 from contagem import avisos_de_precisao, conferir, contar_pecas
-from telas.componentes import BarraTaras, botao, cartao, mudar_papel, rotulo
+from telas.componentes import (BarraTaras, botao, cabecalho, cartao, montar_tela, mudar_papel,
+                               rodape, rotulo)
 from telas.estilo import formatar_numero, formatar_peso
 
 NOMES_METODO = {"cadastro": "do cadastro", "amostra": "pela amostra"}
@@ -29,8 +30,9 @@ class TelaContagem(QWidget):
         self._contagem = None      # ultima contagem com peso estavel
         self._peso_liquido = None
 
+        topo, self.nome, self.subtitulo = cabecalho()
+
         # --- esquerda: o numero grande ---
-        self.nome = rotulo("", "subtitulo")
         self.esperado = rotulo("", "info")
         self.esperado.hide()
         self.quantidade = rotulo("0", "gigante")
@@ -40,8 +42,7 @@ class TelaContagem(QWidget):
         self.avisos.hide()
         esquerda = cartao()
         e = QVBoxLayout(esquerda)
-        e.setContentsMargins(30, 20, 30, 20)
-        e.addWidget(self.nome)
+        e.setContentsMargins(24, 16, 24, 16)
         e.addWidget(self.esperado)
         e.addStretch()
         e.addWidget(self.quantidade)
@@ -50,38 +51,42 @@ class TelaContagem(QWidget):
         e.addStretch()
         e.addWidget(self.avisos)
 
-        # --- direita: detalhes e botoes ---
-        self.peso_liquido = rotulo("", "peso", Qt.AlignLeft)
-        self.peso_unitario = rotulo("", "peso", Qt.AlignLeft)
-        self.tara = rotulo("", "subtitulo", Qt.AlignLeft)
-        detalhes = QGridLayout()
+        # --- direita: pesos e ajustes da balanca ---
+        self.peso_liquido = rotulo("", "peso", Qt.AlignLeft | Qt.AlignVCenter)
+        self.peso_unitario = rotulo("", "peso", Qt.AlignLeft | Qt.AlignVCenter)
+        self.tara = rotulo("", "peso", Qt.AlignLeft | Qt.AlignVCenter)
+        quadro = cartao()
+        detalhes = QGridLayout(quadro)
+        detalhes.setContentsMargins(24, 16, 24, 16)
         detalhes.setHorizontalSpacing(16)
-        detalhes.addWidget(rotulo("No prato", "subtitulo", Qt.AlignLeft | Qt.AlignVCenter), 0, 0)
-        detalhes.addWidget(self.peso_liquido, 0, 1)
-        detalhes.addWidget(rotulo("1 peça", "subtitulo", Qt.AlignLeft | Qt.AlignVCenter), 1, 0)
-        detalhes.addWidget(self.peso_unitario, 1, 1)
-        detalhes.addWidget(self.tara, 2, 0, 1, 2)
+        detalhes.setVerticalSpacing(10)
+        for linha, (texto, valor) in enumerate((("No prato", self.peso_liquido),
+                                                ("1 peça", self.peso_unitario),
+                                                ("Tara", self.tara))):
+            detalhes.addWidget(rotulo(texto, "subtitulo", Qt.AlignLeft | Qt.AlignVCenter), linha, 0)
+            detalhes.addWidget(valor, linha, 1)
         detalhes.setColumnStretch(1, 1)
 
-        self.botao_confirmar = botao("Confirmar", "sucesso", self.confirmar, altura=90)
         acoes = QHBoxLayout()
         acoes.addWidget(botao("Amostra", "secundario", janela.abrir_amostra, altura=70))
         acoes.addWidget(botao("Tara", "secundario", self.tarar, altura=70))
         acoes.addWidget(botao("Zerar", "secundario", janela.zerar_balanca, altura=70))
+        self.taras = BarraTaras(janela.balanca)
         direita = QVBoxLayout()
-        direita.addLayout(detalhes)
+        direita.setSpacing(16)
+        direita.addWidget(quadro)
         direita.addStretch()
         direita.addLayout(acoes)
-        self.taras = BarraTaras(janela.balanca)
         direita.addWidget(self.taras)
-        direita.addWidget(self.botao_confirmar)
-        direita.addWidget(botao("Voltar", "secundario", janela.voltar_da_contagem, altura=60))
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(30, 12, 30, 12)
-        layout.setSpacing(30)
-        layout.addWidget(esquerda, 3)
-        layout.addLayout(direita, 2)
+        corpo = QHBoxLayout()
+        corpo.setSpacing(24)
+        corpo.addWidget(esquerda, 3)
+        corpo.addLayout(direita, 2)
+
+        self.botao_confirmar = botao("Confirmar", "sucesso", self.confirmar)
+        base = rodape([botao("Voltar", "secundario", janela.voltar_da_contagem)], [self.botao_confirmar])
+        montar_tela(self, topo, corpo, base)
 
     # ---------- abrir e configurar ----------
     def abrir(self, codigo, modo="inventario", esperada=None, pedido_id=None):
@@ -92,7 +97,9 @@ class TelaContagem(QWidget):
         self.esperado.setVisible(modo == "conferencia")
         self.taras.recarregar(self.janela.ctrl.taras())
         self.produto = self.janela.ctrl.dados.cadastro("produtos", codigo) or {}
-        self.nome.setText("%s  (%s)" % (self.produto.get("nome", codigo), codigo))
+        self.nome.setText(self.produto.get("nome", codigo))
+        self.subtitulo.setText("%s   ·   %s" % (codigo, "Pedido %s" % pedido_id if modo == "conferencia"
+                                                  else "Inventário"))
         unit = self.produto.get("peso_unit_g")
         self.usar_peso_unitario(float(unit) if unit else None, "cadastro")
 
@@ -100,8 +107,8 @@ class TelaContagem(QWidget):
         self.peso_unit = peso_unit
         self.metodo = metodo
         if peso_unit:
-            self.peso_unitario.setText("%s  (%s)" % (formatar_peso(round(peso_unit, 2)),
-                                                    NOMES_METODO.get(metodo, metodo)))
+            self.peso_unitario.setText("%s  %s" % (formatar_peso(round(peso_unit, 2)),
+                                                  NOMES_METODO.get(metodo, metodo)))
         else:
             self.peso_unitario.setText("sem peso: use a Amostra")
         self._contagem = None
@@ -113,7 +120,7 @@ class TelaContagem(QWidget):
     def atualizar_peso(self, estavel, atual):
         b = self.janela.balanca
         tara = b.tara_g()
-        self.tara.setText("Tara: %s" % formatar_peso(tara) if tara else "")
+        self.tara.setText(formatar_peso(tara) if tara else "sem tara")
         self.peso_liquido.setText(formatar_peso(estavel if estavel is not None else atual))
         if not self.peso_unit:
             self._mostrar(None, "Faça a amostra para saber o peso de 1 peça")

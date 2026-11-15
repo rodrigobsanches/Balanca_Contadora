@@ -1,4 +1,4 @@
-"""Testes da Fase 3a: dados locais, ligacao serial (partes sem hardware) e controlador."""
+"""Testes do controlador: dados locais, ligacao serial (partes sem hardware) e fluxo de operacao."""
 import os
 import sys
 from types import SimpleNamespace

@@ -1,4 +1,4 @@
-"""Monitor da ESP32 no terminal (teste da Fase 3a, sem telas).
+"""Monitor da ESP32 no terminal (sem telas): util para testar a placa e o controlador.
 
 Mostra tudo o que chega da ESP32 e o que o controlador faz com isso.
 Feche o Thonny antes (ele ocupa a porta). Rodar na pasta do projeto:

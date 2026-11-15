@@ -1,11 +1,6 @@
 # ------------------------------------------------------------
-# Arquivos privados: NUNCA vão para o GitHub
+# Adaptador da balança comercial (específico do equipamento, fica só na balança)
 # ------------------------------------------------------------
-# Guia completo do projeto (tem detalhes do equipamento usado)
-CLAUDE.md
-# Pasta com anotações, documentação e lista de palavras bloqueadas
-privado/
-# Adaptador da balança real (código específico do equipamento)
 app_balanca/balanca_privada/*
 !app_balanca/balanca_privada/__init__.py
 
@@ -44,7 +39,6 @@ dist/
 # Editores e sistema
 # ------------------------------------------------------------
 .vscode/
-.claude/
 .idea/
 Thumbs.db
 .DS_Store

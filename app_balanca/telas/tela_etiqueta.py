@@ -1,15 +1,15 @@
 """Tela 4c - Previa da etiqueta de conferido (com QR code) e botao Imprimir.
 
-A impressao de verdade e feita pelo adaptador privado (Fase 5). Sem ele, so a previa.
+A impressao de verdade e feita pelo adaptador da balanca comercial. Sem ele, so a previa.
 """
 from datetime import datetime
 
 import qrcode
 from PySide6.QtCore import QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QPainter
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QWidget
 
-from telas.componentes import botao, rotulo
+from telas.componentes import botao, cabecalho, montar_tela, rodape
 from telas.estilo import formatar_numero, formatar_peso
 
 PAUSA_APOS_IMPRIMIR_MS = 3000   # botao desligado depois de imprimir (descarta toques repetidos)
@@ -93,25 +93,11 @@ class TelaEtiqueta(QWidget):
         super().__init__()
         self.janela = janela
         self.etiqueta = None
-        self.titulo = rotulo("Pedido conferido!", "titulo")
+        topo, self.titulo, self.situacao = cabecalho("Pedido conferido!")
         self.previa = PreviaEtiqueta()
-        self.situacao = rotulo("", "subtitulo")
-
-        self.imprimir_botao = botao("Imprimir etiqueta", ao_clicar=self.imprimir, altura=90)
-        lateral = QVBoxLayout()
-        lateral.addWidget(self.situacao)
-        lateral.addStretch()
-        lateral.addWidget(self.imprimir_botao)
-        lateral.addWidget(botao("Concluir", "sucesso", janela.abrir_conferencia, altura=90))
-
-        corpo = QHBoxLayout()
-        corpo.setSpacing(30)
-        corpo.addWidget(self.previa, 3)
-        corpo.addLayout(lateral, 2)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(40, 16, 40, 16)
-        layout.addWidget(self.titulo)
-        layout.addLayout(corpo, 1)
+        self.imprimir_botao = botao("Imprimir etiqueta", ao_clicar=self.imprimir)
+        base = rodape([botao("Concluir", "secundario", janela.abrir_conferencia)], [self.imprimir_botao])
+        montar_tela(self, topo, self.previa, base)
 
     def abrir(self, etiqueta):
         self.etiqueta = etiqueta
@@ -119,8 +105,8 @@ class TelaEtiqueta(QWidget):
         tem_impressora = self.janela.impressora is not None
         self.imprimir_botao.setText("Imprimir etiqueta")
         self.imprimir_botao.setEnabled(tem_impressora)
-        self.situacao.setText("Confira a etiqueta" if tem_impressora
-                              else "Prévia da etiqueta\n(impressora não configurada)")
+        self.situacao.setText("Confira a etiqueta e toque em Imprimir" if tem_impressora
+                              else "Prévia da etiqueta (impressora não configurada)")
 
     def imprimir(self):
         """Imprime UMA etiqueta. A impressao trava a tela por ~2 s; os toques dados nesse

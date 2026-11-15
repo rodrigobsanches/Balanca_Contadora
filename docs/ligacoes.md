@@ -26,7 +26,7 @@ Pinos do display pela **posição física**, com o dígito de frente e o ponto e
 
 | Fileira | 1º (esq.) | 2º | 3º (meio) | 4º | 5º (dir.) |
 |---|---|---|---|---|---|
-| **Em cima** | g | f | — (não usar) | a | b |
+| **Em cima** | g | f | (não usar) | a | b |
 | **Embaixo** | e | d | **comum** | c | ponto (não usado) |
 
 Use o comum **de baixo**: o de cima não é ligado por dentro no display vermelho testado.

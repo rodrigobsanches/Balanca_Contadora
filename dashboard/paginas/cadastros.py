@@ -198,7 +198,7 @@ def pedidos():
         c1, c2, c3, c4 = st.columns([2, 3, 1, 1])
         itens = ", ".join("%s × %s" % (c, v.get("qtd")) for c, v in (p.get("itens") or {}).items())
         c1.write("**%s** · %s" % (pid, p.get("status", "pendente")))
-        c2.write("%s — %s" % (p.get("destino", ""), itens))
+        c2.write("%s: %s" % (p.get("destino", ""), itens))
         if p.get("status") == "conferido" and c3.button("Reabrir", key="reabrir_" + pid,
                                                          use_container_width=True,
                                                          help="Volta para pendente (útil para repetir a demo)"):

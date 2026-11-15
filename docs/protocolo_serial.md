@@ -61,8 +61,8 @@ falta de `ack`), ela sobrescreve o mesmo registro em vez de duplicar.
 
 | Estado | LED RGB | Buzzer (se instalado) |
 |---|---|---|
-| `ocioso` | apagado | — |
-| `aguardando` | azul | — |
+| `ocioso` | apagado | - |
+| `aguardando` | azul | - |
 | `ok` | verde por 2 s | 1 bipe curto |
 | `erro` | vermelho por 3 s | 3 bipes longos |
 | `atencao` | amarelo | 2 bipes curtos |
