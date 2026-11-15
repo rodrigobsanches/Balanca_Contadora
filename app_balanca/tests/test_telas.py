@@ -241,3 +241,16 @@ def test_zerar_libera_o_retire_tudo_com_prato_marcando_peso(app, sistema):
     app.processEvents()
     assert janela.pilha.currentWidget() is janela.produtos
     assert janela.barra.aviso.text() == "Balança zerada"
+
+
+def test_sair_da_pesagem_tira_a_tara(app, sistema):
+    ctrl, balanca, janela, sim, enviados = sistema
+    ctrl.identificar(UID)
+    janela.abrir_inventario()
+    janela.abrir_contagem("P001")
+    balanca.tara_predefinida(26)
+    janela.abrir_amostra()                       # amostra continua com a tara do pote
+    assert balanca.tara_g() == 26
+    janela.voltar_contagem()
+    janela.voltar_da_contagem()                  # saiu da pesagem: sem tara
+    assert balanca.tara_g() == 0

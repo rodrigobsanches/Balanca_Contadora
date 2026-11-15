@@ -64,7 +64,10 @@ def montar(config, enviar_esp32=None):
     ctrl = Controlador(config, dados, enviar_esp32 or (lambda cmd: False), avisar=ponte.aviso.emit)
     ponte.evento.connect(ctrl.tratar_evento)
     ponte.conexao.connect(ctrl.ao_conexao)
-    janela = JanelaPrincipal(config, ctrl, balanca, criar_impressora(config))
+    impressora = criar_impressora(config)
+    if impressora:
+        impressora.preparar()
+    janela = JanelaPrincipal(config, ctrl, balanca, impressora)
     ponte.aviso.connect(janela.ao_aviso)
     simulacao = None
     if balanca.nome == "simulada":

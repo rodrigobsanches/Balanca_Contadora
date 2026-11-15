@@ -157,6 +157,10 @@ class JanelaPrincipal(QWidget):
 
     # ================= navegacao =================
     def ir(self, tela):
+        # fora das telas de pesagem a balanca fica sempre sem tara (vale para Voltar, Sair,
+        # saida automatica...). Contagem <-> amostra mantem a tara (o pote continua no prato).
+        if tela not in (self.contagem, self.amostra, self.retirar) and self.balanca.tara_g():
+            self.balanca.limpar_tara()
         self.pilha.setCurrentWidget(tela)
         self.ler_balanca()
 

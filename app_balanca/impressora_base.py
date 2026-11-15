@@ -17,6 +17,9 @@ class Impressora:
         """Imprime. Devolve True se deu certo."""
         raise NotImplementedError
 
+    def preparar(self):
+        """Chamado quando o app abre: deixa a impressora pronta (o 1o clique fica rapido)."""
+
 
 def criar_impressora(config):
     """Devolve a impressora da balanca, ou None (so previa na tela)."""
