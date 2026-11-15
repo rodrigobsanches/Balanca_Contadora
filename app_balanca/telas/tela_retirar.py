@@ -5,9 +5,9 @@ Regras (definidas pelo autor em 13/11):
 - a tela so libera outras atividades quando o prato esta VAZIO: peso estavel perto de zero
   e sem tara.
 """
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from telas.componentes import mudar_papel, rotulo
+from telas.componentes import botao, mudar_papel, rotulo
 from telas.estilo import formatar_peso
 
 
@@ -29,6 +29,15 @@ class TelaRetirar(QWidget):
         layout.addSpacing(30)
         layout.addWidget(self.pedido)
         layout.addWidget(self.peso)
+        self.dica = rotulo("Prato vazio e ainda marca peso? Toque em Zerar.", "subtitulo")
+        layout.addWidget(self.dica)
+        linha = QHBoxLayout()
+        linha.addStretch()
+        zerar = botao("Zerar", "secundario", janela.zerar_balanca, altura=70)
+        zerar.setFixedWidth(260)
+        linha.addWidget(zerar)
+        linha.addStretch()
+        layout.addLayout(linha)
         layout.addStretch()
 
     def abrir(self, titulo, texto, tipo="sucesso", depois=None):

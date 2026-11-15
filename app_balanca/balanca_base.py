@@ -48,6 +48,8 @@ class Balanca:
         return False
 
     def zerar(self):
+        """Zera a balanca (como a tecla ZERO), para quando ela marca alguns gramas com o
+        prato vazio. So funciona com peso estavel e dentro da faixa de zero da balanca."""
         raise NotImplementedError
 
     def divisao_g(self):

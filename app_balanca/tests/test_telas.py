@@ -223,3 +223,21 @@ def test_tara_pre_programada(app, sistema):
     # firmware antigo (sem "taras" no sync) nao apaga as taras guardadas
     ctrl.tratar_evento({"t": "sync", "ok": True, "operadores": {}, "produtos": {}, "pedidos": {}})
     assert len(ctrl.taras()) == 2
+
+
+def test_zerar_libera_o_retire_tudo_com_prato_marcando_peso(app, sistema):
+    ctrl, balanca, janela, sim, enviados = sistema
+    ctrl.identificar(UID)
+    janela.abrir_inventario()
+    janela.abrir_contagem("P001")
+    colocar_peso(app, balanca, janela, 104)
+    janela.contagem.confirmar()
+    app.processEvents()
+    colocar_peso(app, balanca, janela, 11)             # prato vazio, mas a celula marca 11 g
+    assert janela.pilha.currentWidget() is janela.retirar
+    assert janela.zerar_balanca()
+    balanca._mudou_em -= 5
+    janela.ler_balanca()
+    app.processEvents()
+    assert janela.pilha.currentWidget() is janela.produtos
+    assert janela.barra.aviso.text() == "Balança zerada"

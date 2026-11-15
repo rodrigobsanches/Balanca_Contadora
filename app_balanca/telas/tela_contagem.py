@@ -67,6 +67,7 @@ class TelaContagem(QWidget):
         acoes = QHBoxLayout()
         acoes.addWidget(botao("Amostra", "secundario", janela.abrir_amostra, altura=70))
         acoes.addWidget(botao("Tara", "secundario", self.tarar, altura=70))
+        acoes.addWidget(botao("Zerar", "secundario", janela.zerar_balanca, altura=70))
         direita = QVBoxLayout()
         direita.addLayout(detalhes)
         direita.addStretch()

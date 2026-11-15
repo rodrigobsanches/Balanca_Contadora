@@ -46,7 +46,10 @@ class TelaAmostra(QWidget):
         self.usar_salvar = botao("Usar e salvar\nno cadastro", "sucesso",
                                  lambda: self.confirmar(True), altura=100)
         lateral = QVBoxLayout()
-        lateral.addWidget(botao("Tara", "secundario", janela.balanca.tarar, altura=80))
+        topo = QHBoxLayout()
+        topo.addWidget(botao("Tara", "secundario", janela.balanca.tarar, altura=80))
+        topo.addWidget(botao("Zerar", "secundario", janela.zerar_balanca, altura=80))
+        lateral.addLayout(topo)
         self.taras = BarraTaras(janela.balanca)
         lateral.addWidget(self.taras)
         lateral.addStretch()

@@ -61,6 +61,7 @@ class BarraStatus(QFrame):
         self.wifi = rotulo("", None, Qt.AlignLeft | Qt.AlignVCenter)
         self.envio = rotulo("", None, Qt.AlignLeft | Qt.AlignVCenter)
         self.operador = rotulo("", None, Qt.AlignRight | Qt.AlignVCenter)
+        self.aviso = rotulo("", None, Qt.AlignRight | Qt.AlignVCenter)   # avisos rapidos (ex.: zerar)
         self.relogio = rotulo("", None, Qt.AlignRight | Qt.AlignVCenter)
         for r in (self.balanca, self.esp32, self.wifi, self.envio, self.operador, self.relogio):
             r.setWordWrap(False)
@@ -69,6 +70,7 @@ class BarraStatus(QFrame):
         for w in (self.balanca, self.esp32, self.wifi, self.envio):
             layout.addWidget(w)
         layout.addStretch()
+        layout.addWidget(self.aviso)
         layout.addWidget(self.operador)
         layout.addWidget(self.relogio)
 
@@ -245,6 +247,22 @@ class JanelaPrincipal(QWidget):
             if self._peso_ref is not None:
                 self._ultima_atividade = time.monotonic()
             self._peso_ref = atual
+
+    def zerar_balanca(self):
+        """Botao Zerar (prato vazio marcando alguns gramas). Com tara ativa a balanca nao
+        zera, entao a tara sai antes. O resultado aparece por alguns segundos na barra."""
+        b = self.balanca
+        if b.tara_g():
+            b.limpar_tara()
+        ok = b.zerar()
+        self.avisar_barra("Balança zerada" if ok else
+                          "Não zerou: deixe o prato vazio e parado e tente de novo")
+        self.ler_balanca()
+        return ok
+
+    def avisar_barra(self, texto, segundos=5):
+        self.barra.aviso.setText(texto)
+        QTimer.singleShot(int(segundos * 1000), lambda: self.barra.aviso.setText(""))
 
     # ================= avisos do controlador =================
     def ao_aviso(self, tipo, info):

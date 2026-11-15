@@ -15,6 +15,7 @@ class BalancaSimulada(Balanca):
         self._divisao = divisao
         self._tempo_estavel_s = tempo_estavel_s
         self._peso_bruto = 0.0
+        self._zero = 0.0
         self._tara = 0.0
         self._mudou_em = time.monotonic()
 
@@ -35,7 +36,7 @@ class BalancaSimulada(Balanca):
         return self._peso_bruto
 
     def peso_atual_g(self):
-        liquido = self._peso_bruto - self._tara
+        liquido = self._peso_bruto - self._zero - self._tara
         return round(liquido / self._divisao) * self._divisao
 
     def peso_estavel_g(self):
@@ -61,7 +62,10 @@ class BalancaSimulada(Balanca):
         return True
 
     def zerar(self):
+        """Como a tecla ZERO: o que esta no prato agora (ex.: 2 g de sujeira) passa a ser zero."""
         self._tara = 0.0
+        self._zero = self._peso_bruto
+        self._mudou_em = time.monotonic()
         return True
 
     def divisao_g(self):
