@@ -27,6 +27,28 @@ def _aviso_ok(texto):
     st.toast(texto, icon=":material/check_circle:")
 
 
+def _botao_excluir(alvo, caminho, descricao, onde=st, bloqueio=None):
+    """Excluir em dois toques: o 1o pede confirmacao, o 2o apaga do Firebase.
+    bloqueio: texto explicando por que nao pode excluir (o botao fica desligado)."""
+    chave = "excluir_" + caminho
+    if not st.session_state.get(chave):
+        if onde.button("Excluir", key="btn_" + chave, use_container_width=True,
+                       disabled=bool(bloqueio), help=bloqueio or "Apaga %s" % descricao):
+            st.session_state[chave] = True
+            st.rerun()
+        return
+    alvo.warning("Excluir %s? Não dá para desfazer." % descricao)
+    c1, c2 = alvo.columns(2)
+    if c1.button("Sim, excluir", key="sim_" + chave, type="primary", use_container_width=True):
+        fb.apagar(caminho)
+        st.session_state.pop(chave, None)
+        _aviso_ok("%s excluído" % (descricao[0].upper() + descricao[1:]))
+        st.rerun()
+    if c2.button("Cancelar", key="nao_" + chave, use_container_width=True):
+        st.session_state.pop(chave, None)
+        st.rerun()
+
+
 # ---------------- taras pre-programadas ----------------
 # Mesmo limite do app da balanca: MAX_TARAS em app_balanca/controlador.py (botoes que cabem na tela).
 MAX_TARAS = 4
@@ -90,6 +112,18 @@ def produtos():
         fb.atualizar("produtos/" + codigo, dados)
         _aviso_ok("Produto %s salvo" % codigo)
         st.rerun()
+    if escolha != "(novo)":
+        _botao_excluir(st, "produtos/" + escolha, "o produto %s" % escolha,
+                       bloqueio=_pedidos_pendentes_com(escolha))
+
+
+def _pedidos_pendentes_com(codigo):
+    """Nao deixa excluir produto que ainda esta num pedido pendente (a conferencia quebraria)."""
+    usando = sorted(pid for pid, p in fb.ler("pedidos").items()
+                    if p.get("status") != "conferido" and codigo in (p.get("itens") or {}))
+    if usando:
+        return "Está nos pedidos pendentes %s. Exclua ou conclua esses pedidos antes." % ", ".join(usando)
+    return None
 
 
 # ---------------- operadores ----------------
@@ -152,7 +186,7 @@ def pedidos():
 
     st.subheader("Pedidos")
     for pid, p in sorted(todos.items()):
-        c1, c2, c3 = st.columns([2, 3, 1])
+        c1, c2, c3, c4 = st.columns([2, 3, 1, 1])
         itens = ", ".join("%s × %s" % (c, v.get("qtd")) for c, v in (p.get("itens") or {}).items())
         c1.write("**%s** · %s" % (pid, p.get("status", "pendente")))
         c2.write("%s — %s" % (p.get("destino", ""), itens))
@@ -161,6 +195,7 @@ def pedidos():
                                                          help="Volta para pendente (útil para repetir a demo)"):
             fb.atualizar("pedidos/" + pid, {"status": "pendente"})
             st.rerun()
+        _botao_excluir(st, "pedidos/" + pid, "o pedido %s" % pid, onde=c4)
 
     st.subheader("Novo pedido")
     if not produtos_cad:

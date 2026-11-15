@@ -96,3 +96,68 @@ def test_contagens_por_dia_tem_sempre_7_dias():
     tabela = tr.contagens_por_dia(df, df["quando"].max().date())
     assert len(tabela) == 7 and list(tabela.columns) == tr.RESULTADOS
     assert tabela.values.sum() == 2
+
+
+def _script_cadastros(pasta):
+    """Roda so a pagina Cadastros, com um banco falso na memoria (nada vai ao Firebase).
+    O AppTest roda esta funcao de novo a cada clique: o banco fica guardado no modulo."""
+    import sys
+    sys.path.insert(0, pasta)
+    import dados_firebase as fb
+    if hasattr(fb, "banco_teste"):
+        banco = fb.banco_teste
+    else:
+        banco = fb.banco_teste = {"produtos": {"P001": {"nome": "Pequeno", "peso_unit_g": 3},
+                          "P009": {"nome": "Sobra", "peso_unit_g": 9}},
+             "pedidos": {"PED001": {"destino": "X", "status": "pendente",
+                                    "itens": {"P001": {"qtd": 10}}}}}
+
+    def ler(caminho):
+        raiz, _, chave = caminho.partition("/")
+        dados = banco.get(raiz, {})
+        return dados.get(chave, {}) if chave else dados
+
+    def apagar(caminho):
+        raiz, _, chave = caminho.partition("/")
+        banco.get(raiz, {}).pop(chave, None)
+
+    fb.ler, fb.apagar = ler, apagar
+    import streamlit as st
+    st.session_state["perfil"] = "admin"
+    from paginas import cadastros
+    cadastros.pagina()
+
+
+def _botao(at, rotulo, chave_contem=""):
+    return next(b for b in at.button if b.label == rotulo and chave_contem in (b.key or ""))
+
+
+def test_excluir_produto_e_pedido_pedem_confirmacao():
+    from streamlit.testing.v1 import AppTest
+    import dados_firebase as fb
+    if hasattr(fb, "banco_teste"):
+        del fb.banco_teste
+    originais = fb.ler, fb.apagar
+    try:
+        _conferir_exclusao(AppTest.from_function(_script_cadastros, args=(PASTA,)).run(), fb)
+    finally:
+        fb.ler, fb.apagar = originais          # os outros testes nao herdam o banco falso
+
+
+def _conferir_exclusao(at, fb):
+
+    at.selectbox(key="prod_escolha").select("P001").run()
+    assert _botao(at, "Excluir", "produtos/P001").disabled        # esta num pedido pendente
+
+    at.selectbox(key="prod_escolha").select("P009").run()
+    _botao(at, "Excluir", "produtos/P009").click().run()
+    assert "P009" in fb.ler("produtos")                            # 1o toque so pergunta
+    _botao(at, "Sim, excluir", "produtos/P009").click().run()
+    assert "P009" not in fb.ler("produtos")
+
+    _botao(at, "Excluir", "pedidos/PED001").click().run()
+    _botao(at, "Cancelar", "pedidos/PED001").click().run()
+    assert "PED001" in fb.ler("pedidos")                           # cancelou: continua
+    _botao(at, "Excluir", "pedidos/PED001").click().run()
+    _botao(at, "Sim, excluir", "pedidos/PED001").click().run()
+    assert "PED001" not in fb.ler("pedidos")
