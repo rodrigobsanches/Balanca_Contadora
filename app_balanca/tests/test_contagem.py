@@ -58,3 +58,13 @@ def test_conferencia():
     assert falta.mensagem == "Faltam 2 peças."
     sobra = conferir(11, 10)
     assert sobra.resultado == "SOBRA" and sobra.mensagem == "Sobra 1 peça."
+
+
+def test_peso_unitario_por_etapas():
+    from contagem import peso_unitario_por_etapas
+    unit, dif = peso_unitario_por_etapas([(1, 3), (5, 15), (10, 30)])
+    assert unit == pytest.approx(3.0) and dif == pytest.approx(0.0)
+    unit, dif = peso_unitario_por_etapas([(1, 3), (5, 15), (10, 33)])    # 11 pecas na ultima
+    assert unit == pytest.approx(51 / 16) and dif > 0.05
+    with pytest.raises(ValueError):
+        peso_unitario_por_etapas([(1, 0)])

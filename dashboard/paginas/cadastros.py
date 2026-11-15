@@ -81,8 +81,17 @@ def taras():
 
 
 # ---------------- produtos ----------------
+# Produto criado pela balanca (sem teclado) chega com este texto no nome.
+# Mesmo valor de SEM_NOME em app_balanca/controlador.py.
+SEM_NOME = "(sem nome)"
+
+
 def produtos():
     cadastrados = fb.ler("produtos")
+    sem_nome = sorted(c for c, p in cadastrados.items() if SEM_NOME in str(p.get("nome", "")))
+    if sem_nome:
+        st.warning("Produtos cadastrados pela balança esperando o nome: %s. Escolha cada um em "
+                   "\"Novo produto ou alterar\" e digite o nome." % ", ".join(sem_nome))
     st.dataframe(tr.estoque_df(cadastrados), hide_index=True, use_container_width=True,
                  column_config=colunas_estoque())
     st.subheader("Novo produto ou alterar")

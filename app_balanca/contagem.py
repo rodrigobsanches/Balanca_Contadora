@@ -46,6 +46,20 @@ def peso_unitario_por_amostra(peso_amostra_g, quantidade_amostra):
     return peso_amostra_g / quantidade_amostra
 
 
+def peso_unitario_por_etapas(medidas):
+    """Cadastro pela balanca: medidas = [(pecas, peso_g), ...] (ex.: 1, 5 e 10 pecas).
+
+    Peso de 1 peca = peso total / total de pecas (as medidas com mais pecas pesam mais na
+    conta, e o erro de 1 divisao some aos poucos). Devolve (peso_unit, maior_diferenca),
+    onde maior_diferenca e a maior distancia (0,10 = 10%) entre o peso de 1 peca de cada
+    medida e o resultado: grande demais = alguma etapa teve o numero errado de pecas."""
+    if not medidas or any(n <= 0 or peso <= 0 for n, peso in medidas):
+        raise ValueError("Cada etapa precisa de pecas e de peso maior que zero.")
+    peso_unit = sum(peso for _, peso in medidas) / sum(n for n, _ in medidas)
+    diferenca = max(abs(peso / n - peso_unit) / peso_unit for n, peso in medidas)
+    return peso_unit, diferenca
+
+
 def avisos_de_precisao(peso_unit_g, divisao_g, peso_amostra_g=None):
     """Lista de avisos quando a balanca nao tem resolucao suficiente."""
     avisos = []

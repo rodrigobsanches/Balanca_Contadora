@@ -15,8 +15,11 @@ class TelaProdutos(QWidget):
         voltar = botao("Voltar", "secundario", janela.ir_menu, altura=70)
         voltar.setMaximumWidth(220)
 
+        novo = botao("+ Novo produto", "sucesso", janela.abrir_novo_produto, altura=70)
+        novo.setMaximumWidth(300)
         topo = QHBoxLayout()
         topo.addWidget(titulo, 1)
+        topo.addWidget(novo)
         topo.addWidget(voltar)
 
         self.grade_widget = QWidget()

@@ -22,6 +22,9 @@ from dados_locais import TIPOS_CADASTRO, DadosLocais, agora_iso
 from contagem import conferir
 
 SERVIDOR_AGORA = {".sv": "timestamp"}  # o Firebase troca pela hora do servidor
+# Produto criado na balanca (sem teclado): o nome e completado no dashboard.
+# O dashboard procura este texto (SEM_NOME em dashboard/paginas/cadastros.py) para destacar.
+SEM_NOME = "(sem nome)"
 MAX_TARAS = 4   # botoes de tara pre-programada que cabem na tela (igual em dashboard/paginas/cadastros.py)
 
 
@@ -216,6 +219,21 @@ class Controlador:
     def pedidos_pendentes(self):
         return {k: v for k, v in self.dados.cadastros("pedidos").items()
                 if v.get("status", "pendente") == "pendente"}
+
+    def proximo_codigo_produto(self):
+        """Proximo codigo livre no formato P001, P002... (pela copia local dos cadastros)."""
+        numeros = [int(c[1:]) for c in self.produtos() if c[:1] == "P" and c[1:].isdigit()]
+        return "P%03d" % (max(numeros, default=0) + 1)
+
+    def criar_produto(self, peso_unit_g):
+        """Cadastro pela balanca: so o peso de 1 peca. Nome provisorio; o nome de verdade
+        e colocado no dashboard (Cadastros -> Produtos). Devolve o codigo criado."""
+        codigo = self.proximo_codigo_produto()
+        campos = {"nome": "Produto %s %s" % (codigo, SEM_NOME), "peso_unit_g": round(peso_unit_g, 4),
+                  "estoque_atual": 0, "estoque_minimo": 0}
+        self.dados.atualizar_cadastro("produtos", codigo, campos)
+        self._operacao("patch", "produtos/" + codigo, campos)
+        return codigo
 
     def salvar_peso_unitario(self, codigo, peso_unit_g):
         """'Usar e salvar no cadastro' da tela de amostra."""

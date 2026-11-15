@@ -254,3 +254,25 @@ def test_sair_da_pesagem_tira_a_tara(app, sistema):
     janela.voltar_contagem()
     janela.voltar_da_contagem()                  # saiu da pesagem: sem tara
     assert balanca.tara_g() == 0
+
+
+def test_novo_produto_pela_balanca_com_1_5_e_10_pecas(app, sistema):
+    ctrl, balanca, janela, sim, enviados = sistema
+    ctrl.identificar(UID)
+    janela.abrir_inventario()
+    janela.abrir_novo_produto()
+    assert janela.novo_produto.titulo.text() == "Novo produto: P010"   # depois do P009
+    for pecas, gramas in ((1, 3), (5, 15), (10, 31)):
+        colocar_peso(app, balanca, janela, gramas)
+        assert janela.novo_produto.registrar.text().startswith("Registrar %d" % pecas)
+        janela.novo_produto.registrar.click()
+    assert janela.novo_produto.salvar.isVisibleTo(janela.novo_produto)
+    assert janela.novo_produto.numero.text().startswith("3,06")       # 49 g / 16 pecas
+    janela.novo_produto.salvar.click()
+    app.processEvents()
+    p = ctrl.dados.cadastro("produtos", "P010")
+    assert p["peso_unit_g"] == pytest.approx(49 / 16) and "(sem nome)" in p["nome"]
+    assert any(c.get("path") == "produtos/P010" for c in enviados)
+    assert janela.pilha.currentWidget() is janela.retirar
+    colocar_peso(app, balanca, janela, 0)
+    assert janela.pilha.currentWidget() is janela.produtos

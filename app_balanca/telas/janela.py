@@ -19,6 +19,7 @@ from telas.tela_descanso import TelaDescanso
 from telas.tela_etiqueta import TelaEtiqueta
 from telas.tela_menu import TelaMenu
 from telas.tela_mensagem import TelaMensagem
+from telas.tela_novo_produto import TelaNovoProduto
 from telas.tela_pedido import TelaPedido
 from telas.tela_pedidos import TelaPedidos
 from telas.tela_produtos import TelaProdutos
@@ -118,8 +119,10 @@ class JanelaPrincipal(QWidget):
         self.pedido = TelaPedido(self)
         self.etiqueta = TelaEtiqueta(self)
         self.retirar = TelaRetirar(self)
+        self.novo_produto = TelaNovoProduto(self)
         for t in (self.descanso, self.menu, self.produtos, self.contagem, self.amostra,
-                  self.mensagem, self.pedidos, self.pedido, self.etiqueta, self.retirar):
+                  self.mensagem, self.pedidos, self.pedido, self.etiqueta, self.retirar,
+                  self.novo_produto):
             self.pilha.addWidget(t)
         layout.addWidget(self.pilha, 1)
 
@@ -156,10 +159,14 @@ class JanelaPrincipal(QWidget):
         return False
 
     # ================= navegacao =================
+    def telas_de_pesagem(self):
+        """Telas que leem o peso; fora delas a balanca fica sem tara."""
+        return (self.contagem, self.amostra, self.retirar, self.novo_produto)
+
     def ir(self, tela):
         # fora das telas de pesagem a balanca fica sempre sem tara (vale para Voltar, Sair,
         # saida automatica...). Contagem <-> amostra mantem a tara (o pote continua no prato).
-        if tela not in (self.contagem, self.amostra, self.retirar) and self.balanca.tara_g():
+        if tela not in self.telas_de_pesagem() and self.balanca.tara_g():
             self.balanca.limpar_tara()
         self.pilha.setCurrentWidget(tela)
         self.ler_balanca()
@@ -170,6 +177,10 @@ class JanelaPrincipal(QWidget):
     def abrir_inventario(self):
         self.produtos.recarregar()
         self.ir(self.produtos)
+
+    def abrir_novo_produto(self):
+        self.novo_produto.abrir()
+        self.ir(self.novo_produto)
 
     def abrir_contagem(self, codigo):
         self.contagem.abrir(codigo)
@@ -238,7 +249,7 @@ class JanelaPrincipal(QWidget):
         if self.visor:
             self.visor.mostrar(atual, estavel, self.balanca.tara_g())
         tela = self.pilha.currentWidget()
-        if tela in (self.contagem, self.amostra, self.retirar):
+        if tela in self.telas_de_pesagem():
             tela.atualizar_peso(estavel, atual)
             self._peso_mudou(atual)
 
